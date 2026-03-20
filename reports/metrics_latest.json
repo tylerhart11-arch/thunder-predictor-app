@@ -1,0 +1,72 @@
+{
+  "split": {
+    "split_type": "season_holdout_current",
+    "train_end_date": "2024-04-14",
+    "validation_end_date": "2025-04-13",
+    "train_seasons": [
+      "2014-15",
+      "2015-16",
+      "2016-17",
+      "2017-18",
+      "2018-19",
+      "2019-20",
+      "2020-21",
+      "2021-22",
+      "2022-23",
+      "2023-24"
+    ],
+    "validation_seasons": [
+      "2024-25"
+    ],
+    "test_seasons": [
+      "2025-26"
+    ]
+  },
+  "baseline_test": {
+    "accuracy": 0.6747285291214216,
+    "log_loss": 0.5993611635539168,
+    "roc_auc": 0.7432649972482113,
+    "brier_score": 0.20618008642580385,
+    "confusion_matrix": {
+      "tn": 627,
+      "fp": 293,
+      "fn": 366,
+      "tp": 740
+    },
+    "n_obs": 2026
+  },
+  "improved_test_uncalibrated": {
+    "accuracy": 0.6875616979269497,
+    "log_loss": 0.5920580039270902,
+    "roc_auc": 0.747053129176822,
+    "brier_score": 0.2033961984337839,
+    "confusion_matrix": {
+      "tn": 525,
+      "fp": 395,
+      "fn": 238,
+      "tp": 868
+    },
+    "n_obs": 2026
+  },
+  "improved_test_calibrated": {
+    "accuracy": 0.6831194471865746,
+    "log_loss": 0.5953810752827444,
+    "roc_auc": 0.7438551576381791,
+    "brier_score": 0.20450983717694848,
+    "confusion_matrix": {
+      "tn": 572,
+      "fp": 348,
+      "fn": 294,
+      "tp": 812
+    },
+    "n_obs": 2026
+  },
+  "best_params": {
+    "n_estimators": 200,
+    "max_depth": 3,
+    "learning_rate": 0.03,
+    "subsample": 1.0,
+    "colsample_bytree": 0.8
+  },
+  "generated_at_utc": "2026-03-20T00:06:35Z"
+}

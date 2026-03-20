@@ -1,0 +1,24 @@
+.codex/
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+Thumbs.db
+
+# Local logs and runtime state
+logs/
+
+# Heavy local-only training data
+data/nba.sqlite
+data/raw/
+data/features/
+data/cleaned/team_games_clean.csv
+
+# Local model binaries are not required for the hosted dashboard
+models/

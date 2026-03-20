@@ -1,0 +1,26 @@
+{
+  "split_type": "season_holdout_current",
+  "train_end_date": "2024-04-14",
+  "validation_end_date": "2025-04-13",
+  "train_rows": 11979,
+  "validation_rows": 2450,
+  "test_rows": 2026,
+  "train_seasons": [
+    "2014-15",
+    "2015-16",
+    "2016-17",
+    "2017-18",
+    "2018-19",
+    "2019-20",
+    "2020-21",
+    "2021-22",
+    "2022-23",
+    "2023-24"
+  ],
+  "validation_seasons": [
+    "2024-25"
+  ],
+  "test_seasons": [
+    "2025-26"
+  ]
+}

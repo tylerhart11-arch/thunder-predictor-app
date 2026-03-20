@@ -1,0 +1,42 @@
+project:
+  name: nba-thunder-predictor
+  timezone: America/Chicago
+  thunder_team_abbr: OKC
+  random_seed: 42
+
+data:
+  historical_start_season: 2014
+  include_playoffs: false
+  min_games_for_features: 5
+  scoreboard_days_back: 7
+  scoreboard_days_forward: 7
+  storage:
+    sqlite_path: data/nba.sqlite
+    raw_dir: data/raw
+    cleaned_dir: data/cleaned
+    features_dir: data/features
+    predictions_dir: data/predictions
+    artifacts_dir: data/artifacts
+
+model:
+  target_col: home_win
+  feature_set_name: pregame_core_v1
+  split:
+    train_ratio: 0.70
+    validation_ratio: 0.15
+  baseline:
+    class_weight: balanced
+    max_iter: 3000
+  xgboost:
+    use_xgboost: true
+    param_grid:
+      n_estimators: [200, 400]
+      max_depth: [3, 5]
+      learning_rate: [0.03, 0.08]
+      subsample: [0.8, 1.0]
+      colsample_bytree: [0.8, 1.0]
+    early_stopping_rounds: 30
+
+update:
+  retrain_every_days: 7
+  min_new_games_for_retrain: 40
