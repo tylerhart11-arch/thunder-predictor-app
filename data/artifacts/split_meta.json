@@ -4,7 +4,7 @@
   "validation_end_date": "2025-04-13",
   "train_rows": 11979,
   "validation_rows": 2450,
-  "test_rows": 2026,
+  "test_rows": 2070,
   "train_seasons": [
     "2014-15",
     "2015-16",
