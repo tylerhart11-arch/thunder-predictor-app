@@ -119,7 +119,7 @@ python -m src.cli run-dashboard --dashboard-port 8512
 
 ## Configuration
 
-Main settings live in [config.yaml](C:/Users/Tyler%20Hart/Documents/Playground/config/config.yaml).
+Main settings live in `config/config.yaml`.
 
 Most likely edits:
 - `project.thunder_team_abbr`
