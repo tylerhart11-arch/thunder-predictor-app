@@ -9,7 +9,6 @@ from dashboard.helpers import (
     load_archive,
     load_clean_games,
     load_upcoming,
-    render_section_grid,
     render_update_pill,
     read_json,
 )
@@ -41,16 +40,61 @@ if thunder_acc is None:
 else:
     c4.metric("Thunder Accuracy", f"{thunder_acc:.1%}")
 
-render_section_grid(
-    [
-        ("League Overview", "Standings, game flow, and league-wide board context."),
-        ("Model Performance", "Accuracy, calibration, and split-by-split scorecard."),
-        ("Thunder Tracker", "Every OKC call, result, confidence swing, and hit rate."),
-        ("Upcoming Predictions", "The next slate with model win probabilities and predicted winners."),
-        ("Diagnostics", "Leakage checks, quality reports, and reliability detail."),
-        ("Arena Notes", "This dashboard is styled like a loud OKC sportsbook board on purpose."),
-    ]
-)
+st.subheader("Control Room")
+nav1, nav2, nav3 = st.columns(3)
+with nav1:
+    st.markdown("**League Overview**")
+    st.caption("Standings, recent scores, and league-wide game flow.")
+with nav2:
+    st.markdown("**Thunder Tracker**")
+    st.caption("OKC-specific picks, results, confidence, and rolling accuracy.")
+with nav3:
+    st.markdown("**Diagnostics**")
+    st.caption("Model calibration, leakage checks, and holdout split detail.")
+
+preview_left, preview_right = st.columns(2)
+
+with preview_left:
+    st.subheader("Upcoming Board")
+    if upcoming.empty:
+        st.info("No upcoming games are currently queued in the prediction board.")
+    else:
+        upcoming_view = upcoming.copy().sort_values("GAME_DATE").head(8)
+        st.dataframe(
+            upcoming_view[
+                [
+                    "GAME_DATE",
+                    "HOME_TEAM_ABBREVIATION",
+                    "AWAY_TEAM_ABBREVIATION",
+                    "PRED_HOME_WIN_PROB",
+                ]
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+
+with preview_right:
+    st.subheader("Thunder Recent Results")
+    thunder_games = archive[
+        (archive["HOME_TEAM_ABBREVIATION"] == "OKC") | (archive["AWAY_TEAM_ABBREVIATION"] == "OKC")
+    ].copy()
+    thunder_completed = thunder_games[thunder_games["ACTUAL_HOME_WIN"].notna()].sort_values("GAME_DATE", ascending=False)
+    if thunder_completed.empty:
+        st.info("Thunder results will appear here as completed predictions accumulate.")
+    else:
+        st.dataframe(
+            thunder_completed[
+                [
+                    "GAME_DATE",
+                    "HOME_TEAM_ABBREVIATION",
+                    "AWAY_TEAM_ABBREVIATION",
+                    "PRED_HOME_WIN_PROB",
+                    "ACTUAL_HOME_WIN",
+                ]
+            ].head(8),
+            use_container_width=True,
+            hide_index=True,
+        )
 
 if metrics:
     st.subheader("Latest Model Snapshot")
