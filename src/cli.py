@@ -46,7 +46,7 @@ def main() -> None:
     elif args.command == "daily-update":
         pipeline.run_daily_update()
     else:
-        cmd = [sys.executable, "-m", "streamlit", "run", "dashboard/app.py", "--server.port", str(args.dashboard_port)]
+        cmd = [sys.executable, "-m", "streamlit", "run", "streamlit_app.py", "--server.port", str(args.dashboard_port)]
         logger.info("Launching dashboard: %s", " ".join(cmd))
         subprocess.run(cmd, check=True)  # noqa: S603
 

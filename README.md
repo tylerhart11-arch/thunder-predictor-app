@@ -24,9 +24,7 @@ Playground/
   config/
     config.yaml
   dashboard/
-    app.py
     helpers.py
-    pages/
   data/
     raw/
     cleaned/
@@ -36,6 +34,12 @@ Playground/
     nba.sqlite
   logs/
   models/
+  pages/
+    1_League_Overview.py
+    2_Model_Performance.py
+    3_Thunder_Tracker.py
+    4_Upcoming_Predictions.py
+    5_Diagnostics.py
   reports/
     diagnostics/
   scripts/
@@ -63,13 +67,15 @@ Playground/
   .env.template
   requirements.txt
   README.md
+  streamlit_app.py
 ```
 
 ## Key Directories
 
 - `src/`: core pipeline logic
 - `scripts/`: simple entrypoints to run the project
-- `dashboard/`: Streamlit app and pages
+- `dashboard/`: shared dashboard helpers and presentation code
+- `pages/`: Streamlit multipage app screens
 - `config/`: project settings
 - `data/`: local raw, cleaned, feature, and prediction data
 - `models/`: saved trained models

@@ -43,23 +43,6 @@ CASINO_THEME_CSS = """
   font-family: "DM Sans", "Segoe UI", sans-serif;
 }
 
-[data-testid="stAppViewContainer"]::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 18%),
-    repeating-linear-gradient(
-      90deg,
-      rgba(255,255,255,0.015) 0,
-      rgba(255,255,255,0.015) 1px,
-      rgba(0,0,0,0) 1px,
-      rgba(0,0,0,0) 120px
-    );
-  mix-blend-mode: screen;
-}
-
 [data-testid="stSidebar"] {
   background:
     linear-gradient(180deg, rgba(7,16,31,0.98), rgba(7,12,22,0.98)),
@@ -95,7 +78,7 @@ h3 {
   color: var(--jumbotron-ice);
 }
 
-p, li, label, [data-testid="stMarkdownContainer"] {
+p, li, label {
   color: #e8f2ff;
 }
 
@@ -159,34 +142,6 @@ div[data-testid="stDataFrame"] [role="columnheader"] {
     0 18px 40px rgba(0,0,0,0.34),
     inset 0 1px 0 rgba(255,255,255,0.05),
     inset 0 -1px 0 rgba(239,59,36,0.18);
-}
-
-.casino-banner::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 15% 0%, rgba(215,241,255,0.34), rgba(215,241,255,0) 24%),
-    radial-gradient(circle at 85% 0%, rgba(215,241,255,0.3), rgba(215,241,255,0) 26%),
-    linear-gradient(90deg, rgba(239,59,36,0.08), rgba(0,122,193,0.08));
-  pointer-events: none;
-}
-
-.casino-banner::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 58px;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.18)),
-    repeating-linear-gradient(
-      90deg,
-      rgba(246,196,83,0.18) 0,
-      rgba(246,196,83,0.18) 16px,
-      rgba(0,0,0,0) 16px,
-      rgba(0,0,0,0) 32px
-    );
-  pointer-events: none;
 }
 
 .arena-lightbank {
@@ -366,8 +321,15 @@ div[data-testid="stDataFrame"] [role="columnheader"] {
 """
 
 
+def _render_html_block(block: str) -> None:
+    if hasattr(st, "html"):
+        st.html(block)
+    else:
+        st.markdown(block, unsafe_allow_html=True)
+
+
 def apply_casino_theme(page_title: str, subtitle: str) -> None:
-    st.markdown(CASINO_THEME_CSS, unsafe_allow_html=True)
+    _render_html_block(CASINO_THEME_CSS)
     banner_html = f"""
     <div class="casino-banner">
       <div class="arena-lightbank">
@@ -403,7 +365,7 @@ def apply_casino_theme(page_title: str, subtitle: str) -> None:
       </div>
     </div>
     """
-    st.markdown(banner_html, unsafe_allow_html=True)
+    _render_html_block(banner_html)
 
 
 def style_plotly(fig: go.Figure) -> go.Figure:
@@ -442,7 +404,7 @@ def render_section_grid(cards: list[tuple[str, str]]) -> None:
         """
         for label, copy in cards
     )
-    st.markdown(f'<div class="arena-card-grid">{cards_html}</div>', unsafe_allow_html=True)
+    _render_html_block(f'<div class="arena-card-grid">{cards_html}</div>')
 
 
 def latest_update_timestamp() -> str | None:
@@ -460,14 +422,13 @@ def latest_update_timestamp() -> str | None:
 
 
 def render_update_pill(label: str) -> None:
-    st.markdown(
+    _render_html_block(
         f"""
         <div class="update-pill">
           <span class="update-dot"></span>
           <span>{label}</span>
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
