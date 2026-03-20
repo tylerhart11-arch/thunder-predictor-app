@@ -9,6 +9,7 @@ from dashboard.helpers import (
     load_archive,
     load_clean_games,
     load_upcoming,
+    render_section_grid,
     render_update_pill,
     read_json,
 )
@@ -40,15 +41,15 @@ if thunder_acc is None:
 else:
     c4.metric("Thunder Accuracy", f"{thunder_acc:.1%}")
 
-st.markdown(
-    """
-Use the page selector in the left sidebar:
-- `League Overview`
-- `Model Performance`
-- `Thunder Tracker`
-- `Upcoming Predictions`
-- `Diagnostics`
-"""
+render_section_grid(
+    [
+        ("League Overview", "Standings, game flow, and league-wide board context."),
+        ("Model Performance", "Accuracy, calibration, and split-by-split scorecard."),
+        ("Thunder Tracker", "Every OKC call, result, confidence swing, and hit rate."),
+        ("Upcoming Predictions", "The next slate with model win probabilities and predicted winners."),
+        ("Diagnostics", "Leakage checks, quality reports, and reliability detail."),
+        ("Arena Notes", "This dashboard is styled like a loud OKC sportsbook board on purpose."),
+    ]
 )
 
 if metrics:
