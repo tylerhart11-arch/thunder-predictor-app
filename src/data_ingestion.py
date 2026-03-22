@@ -195,16 +195,25 @@ class NBADataIngestion:
         center_date = center_date or date.today()
         back = int(self.cfg["data"]["scoreboard_days_back"])
         fwd = int(self.cfg["data"]["scoreboard_days_forward"])
+        max_failed_dates = int(self.cfg["data"].get("scoreboard_abort_after_failed_dates", 2))
         start_date = center_date - timedelta(days=back)
         end_date = center_date + timedelta(days=fwd)
         days = daterange(start_date, end_date)
 
         frames: list[pd.DataFrame] = []
+        consecutive_failures = 0
         for d in days:
             try:
                 frame = self.fetch_scoreboard_for_date(d)
+                consecutive_failures = 0
             except Exception as exc:  # noqa: BLE001
+                consecutive_failures += 1
                 self.logger.warning("Skipping scoreboard date %s due to repeated API failures: %s", d.isoformat(), exc)
+                if consecutive_failures >= max_failed_dates:
+                    raise RuntimeError(
+                        "Aborting scoreboard window refresh after "
+                        f"{consecutive_failures} consecutive failed dates; cached scoreboard data should be used."
+                    ) from exc
                 continue
             if not frame.empty:
                 frames.append(frame)
