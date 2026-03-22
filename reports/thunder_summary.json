@@ -1,8 +1,8 @@
 {
-  "games": 4,
+  "games": 5,
   "accuracy": 1.0,
-  "correct": 4,
+  "correct": 5,
   "incorrect": 0,
-  "avg_confidence_correct": 0.4635732424480343,
+  "avg_confidence_correct": 0.5465107686100502,
   "avg_confidence_incorrect": null
 }

@@ -1,7 +1,7 @@
 {
   "team_games": {
-    "rows": 33086,
-    "duplicates": 16543,
+    "rows": 28538,
+    "duplicates": 14269,
     "missing_pct": {
       "FT_PCT": 0.0,
       "SEASON_ID": 0.0,
@@ -28,7 +28,7 @@
     "date_max": "2026-03-21 00:00:00"
   },
   "game_level": {
-    "rows": 16523,
+    "rows": 14259,
     "duplicates": 0,
     "missing_pct": {
       "GAME_ID": 0.0,
@@ -50,7 +50,7 @@
     "date_max": "2026-03-21 00:00:00"
   },
   "training_features": {
-    "rows": 16523,
+    "rows": 14259,
     "duplicates": 0,
     "missing_pct": {
       "GAME_ID": 0.0,
