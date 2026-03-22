@@ -20,7 +20,7 @@ The project:
 ## Repo Layout
 
 ```text
-Playground/
+Finance Terminal/
   config/
     config.yaml
   dashboard/
