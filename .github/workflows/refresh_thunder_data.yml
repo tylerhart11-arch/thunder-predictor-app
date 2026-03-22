@@ -1,0 +1,55 @@
+name: Refresh Thunder Predictor Data
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub schedules are UTC. These runs target postgame + morning refresh windows.
+    - cron: "15 5,7,9,13 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: thunder-predictor-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP_TIMEZONE: America/Chicago
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run daily update
+        run: python scripts/daily_update.py
+
+      - name: Commit refreshed artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/artifacts
+          git add data/cleaned/games_clean.csv
+          git add data/predictions
+          git add reports
+          if git diff --cached --quiet; then
+            echo "No artifact changes to commit."
+            exit 0
+          fi
+          git commit -m "Automated data refresh"
+          git push

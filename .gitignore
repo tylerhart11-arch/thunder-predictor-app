@@ -22,3 +22,6 @@ data/cleaned/team_games_clean.csv
 
 # Local model binaries are not required for the hosted dashboard
 models/
+
+# Unrelated project living beside the predictor
+signalstack/

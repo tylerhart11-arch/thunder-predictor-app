@@ -123,6 +123,27 @@ python -m src.cli daily-update
 python -m src.cli run-dashboard --dashboard-port 8512
 ```
 
+## Automated Refresh
+
+The deployed app can now refresh itself from GitHub Actions.
+
+- Workflow file: `.github/workflows/refresh_thunder_data.yml`
+- Trigger types:
+  - manual run from the GitHub `Actions` tab
+  - scheduled runs throughout the overnight/morning window
+
+What it does:
+- installs dependencies
+- runs `python scripts/daily_update.py`
+- commits updated dashboard artifacts back to `main`
+
+Because Streamlit Cloud is connected to the repo, a successful artifact push will trigger an app redeploy with fresh data.
+
+Schedule note:
+- GitHub Actions schedules run in UTC
+- this workflow is set for `05:15`, `07:15`, `09:15`, and `13:15` UTC each day
+- in Central time, that targets overnight postgame and morning refresh windows
+
 ## Configuration
 
 Main settings live in `config/config.yaml`.
