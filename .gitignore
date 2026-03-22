@@ -16,7 +16,9 @@ logs/
 
 # Heavy local-only training data
 data/nba.sqlite
-data/raw/
+data/raw/*
+!data/raw/league_game_log_raw.csv
+!data/raw/scoreboard_raw.csv
 data/features/
 data/cleaned/team_games_clean.csv
 

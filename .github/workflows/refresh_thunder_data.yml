@@ -43,6 +43,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw
           git add data/artifacts
           git add data/cleaned/games_clean.csv
           git add data/predictions
