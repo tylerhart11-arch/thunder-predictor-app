@@ -48,12 +48,25 @@ def initialize_prediction_archive(path: Path) -> pd.DataFrame:
 def reconcile_archive_with_actuals(archive_df: pd.DataFrame, actual_games: pd.DataFrame) -> pd.DataFrame:
     if archive_df.empty:
         return archive_df
-    actual = actual_games[["GAME_ID", "HOME_WIN"]].copy().rename(columns={"HOME_WIN": "ACTUAL_HOME_WIN"})
+    actual_cols = ["GAME_ID", "HOME_WIN"]
+    if "GAME_DATE" in actual_games.columns:
+        actual_cols.append("GAME_DATE")
+    actual = actual_games[actual_cols].copy().rename(columns={"HOME_WIN": "ACTUAL_HOME_WIN"})
     actual["GAME_ID"] = actual["GAME_ID"].astype(str)
+    if "GAME_DATE" in actual.columns:
+        actual["GAME_DATE"] = pd.to_datetime(actual["GAME_DATE"], errors="coerce")
 
     out = archive_df.copy()
     out["GAME_ID"] = out["GAME_ID"].astype(str)
-    out = out.drop(columns=["ACTUAL_HOME_WIN", "IS_CORRECT"], errors="ignore").merge(actual, on="GAME_ID", how="left")
+    out = out.drop(columns=["ACTUAL_HOME_WIN", "IS_CORRECT"], errors="ignore").merge(
+        actual,
+        on="GAME_ID",
+        how="left",
+        suffixes=("", "_ACTUAL"),
+    )
+    if "GAME_DATE_ACTUAL" in out.columns:
+        out["GAME_DATE"] = pd.to_datetime(out.get("GAME_DATE"), errors="coerce").fillna(out["GAME_DATE_ACTUAL"])
+        out = out.drop(columns=["GAME_DATE_ACTUAL"])
     known_mask = out["ACTUAL_HOME_WIN"].notna()
     out["IS_CORRECT"] = np.where(known_mask, (out["PRED_HOME_WIN"] == out["ACTUAL_HOME_WIN"]).astype(int), np.nan)
     return out

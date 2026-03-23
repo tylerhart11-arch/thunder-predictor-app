@@ -2,7 +2,14 @@ from __future__ import annotations
 
 import streamlit as st
 
-from dashboard.helpers import REPORTS, ROOT, apply_casino_theme, read_csv, read_json
+from dashboard.helpers import (
+    REPORTS,
+    ROOT,
+    apply_casino_theme,
+    load_model_maintenance_artifacts,
+    read_csv,
+    read_json,
+)
 
 
 apply_casino_theme(
@@ -37,3 +44,29 @@ rel = read_csv(REPORTS / "diagnostics" / "reliability_curve_test.csv")
 if not rel.empty:
     st.subheader("Reliability Curve Data")
     st.dataframe(rel, use_container_width=True)
+
+maintenance = load_model_maintenance_artifacts()
+maintenance_summary = maintenance["summary"]
+maintenance_windows = maintenance["windows"]
+maintenance_segments = maintenance["segments"]
+maintenance_buckets = maintenance["confidence_buckets"]
+
+st.subheader("Thunder Maintenance Artifacts")
+if not maintenance_summary and maintenance_windows.empty and maintenance_segments.empty and maintenance_buckets.empty:
+    st.info("Model maintenance reports are not available yet.")
+else:
+    if maintenance_summary:
+        st.caption("Summary")
+        st.json(maintenance_summary)
+
+    if not maintenance_windows.empty:
+        st.caption("Windows")
+        st.dataframe(maintenance_windows, use_container_width=True)
+
+    if not maintenance_segments.empty:
+        st.caption("Segments")
+        st.dataframe(maintenance_segments, use_container_width=True)
+
+    if not maintenance_buckets.empty:
+        st.caption("Confidence Buckets")
+        st.dataframe(maintenance_buckets, use_container_width=True)
