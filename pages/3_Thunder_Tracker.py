@@ -109,6 +109,12 @@ maintenance_summary = maintenance["summary"]
 maintenance_windows = maintenance["windows"]
 maintenance_segments = maintenance["segments"]
 maintenance_buckets = maintenance["confidence_buckets"]
+if "scope" in maintenance_windows.columns:
+    maintenance_windows = maintenance_windows[maintenance_windows["scope"] == "thunder"].copy()
+if "scope" in maintenance_segments.columns:
+    maintenance_segments = maintenance_segments[maintenance_segments["scope"] == "thunder"].copy()
+if "scope" in maintenance_buckets.columns:
+    maintenance_buckets = maintenance_buckets[maintenance_buckets["scope"] == "thunder"].copy()
 
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Tracked Thunder Games", int(thunder_summary.get("games", completed_games)))
@@ -185,18 +191,12 @@ if not maintenance_summary and maintenance_windows.empty and maintenance_segment
     st.info("Maintenance artifacts are not available yet. Once the backend writes them, this panel will fill in.")
 else:
     status = _summary_pick(maintenance_summary, "status", "signal", "maintenance_status", "alert_status") or "Available"
-    recent_games = _summary_pick(
-        maintenance_summary, "recent_games", "games", "window_games", "n_recent_games", "sample_size"
-    )
-    recent_accuracy = _summary_pick(
-        maintenance_summary, "recent_accuracy", "rolling_accuracy", "accuracy_recent", "accuracy_10"
-    )
-    recent_brier = _summary_pick(
-        maintenance_summary, "recent_brier_score", "recent_brier", "brier_score_recent", "brier_score"
-    )
-    recent_log_loss = _summary_pick(
-        maintenance_summary, "recent_log_loss", "log_loss_recent", "recent_logloss"
-    )
+    thunder_summary_block = maintenance_summary.get("thunder", {}) if isinstance(maintenance_summary, dict) else {}
+    thunder_recent = thunder_summary_block.get("recent", {}) if isinstance(thunder_summary_block, dict) else {}
+    recent_games = thunder_recent.get("games")
+    recent_accuracy = thunder_recent.get("accuracy")
+    recent_brier = thunder_recent.get("brier_score")
+    recent_log_loss = thunder_recent.get("log_loss")
 
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Status", str(status))
@@ -207,9 +207,10 @@ else:
     if recent_log_loss is not None:
         st.caption(f"Recent log loss: {_format_num(recent_log_loss)}")
 
-    note = _summary_pick(maintenance_summary, "recommendation", "action", "summary", "notes")
-    if note:
-        st.caption(str(note))
+    for alert in maintenance_summary.get("alerts", []):
+        st.warning(str(alert))
+    for warning in maintenance_summary.get("warnings", []):
+        st.caption(str(warning))
 
     if not maintenance_windows.empty:
         st.markdown("**Maintenance Windows**")

@@ -115,9 +115,14 @@ maintenance_buckets = maintenance_artifacts["confidence_buckets"]
 if maintenance_summary or not maintenance_windows.empty or not maintenance_segments.empty or not maintenance_buckets.empty:
     st.subheader("Model Maintenance")
 
-    def _pick(*keys: str):
-        for key in keys:
-            value = maintenance_summary.get(key)
+    def _pick(*paths: str):
+        for path in paths:
+            value = maintenance_summary
+            for part in path.split("."):
+                if not isinstance(value, dict):
+                    value = None
+                    break
+                value = value.get(part)
             if value is not None:
                 return value
         return None
@@ -135,10 +140,10 @@ if maintenance_summary or not maintenance_windows.empty or not maintenance_segme
             return "N/A"
 
     status = _pick("status", "signal", "maintenance_status", "alert_status") or "Available"
-    recent_games = _pick("recent_games", "games", "window_games", "n_recent_games")
-    recent_accuracy = _pick("recent_accuracy", "rolling_accuracy", "accuracy_recent", "accuracy_10")
-    recent_brier = _pick("recent_brier_score", "recent_brier", "brier_score_recent", "brier_score")
-    recent_log_loss = _pick("recent_log_loss", "log_loss_recent", "recent_logloss")
+    recent_games = _pick("league.recent.games", "recent_games", "games", "window_games", "n_recent_games")
+    recent_accuracy = _pick("league.recent.accuracy", "recent_accuracy", "rolling_accuracy", "accuracy_recent")
+    recent_brier = _pick("league.recent.brier_score", "recent_brier_score", "recent_brier", "brier_score_recent")
+    recent_log_loss = _pick("league.recent.log_loss", "recent_log_loss", "log_loss_recent", "recent_logloss")
 
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Status", str(status))
@@ -149,9 +154,12 @@ if maintenance_summary or not maintenance_windows.empty or not maintenance_segme
     if recent_log_loss is not None:
         st.caption(f"Recent log loss: {_format_num(recent_log_loss)}")
 
-    note = _pick("recommendation", "action", "summary", "notes")
-    if note:
-        st.caption(str(note))
+    alerts = maintenance_summary.get("alerts", [])
+    warnings = maintenance_summary.get("warnings", [])
+    for alert in alerts:
+        st.warning(str(alert))
+    for warning in warnings:
+        st.caption(str(warning))
 else:
     st.subheader("Model Maintenance")
     st.caption("Maintenance artifacts will appear here once the backend starts writing them.")

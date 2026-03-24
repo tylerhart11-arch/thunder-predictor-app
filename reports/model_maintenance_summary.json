@@ -1,0 +1,84 @@
+{
+  "generated_at_utc": "2026-03-24T00:04:43Z",
+  "status": "watch",
+  "live_retrain_recommended": false,
+  "alerts": [],
+  "warnings": [
+    "Thunder sample is still small: 5 completed games, below the recent window of 10."
+  ],
+  "production_context": {
+    "last_retrain_utc": null,
+    "n_games_trained": null,
+    "production_train_seasons": null
+  },
+  "reference_holdout_metrics": {
+    "accuracy": 0.6559241706161137,
+    "log_loss": 0.6371667021338312,
+    "roc_auc": 0.7183604134823647,
+    "brier_score": 0.2138312229650258,
+    "confusion_matrix": {
+      "tn": 259,
+      "fp": 222,
+      "fn": 141,
+      "tp": 433
+    },
+    "n_obs": 1055
+  },
+  "league": {
+    "overall": {
+      "games": 86,
+      "accuracy": 0.7790697674418605,
+      "log_loss": 0.4868015576584884,
+      "roc_auc": 0.8428019856591286,
+      "brier_score": 0.16090321861182444,
+      "avg_confidence": 0.7147374694204903,
+      "date_min": "2026-03-11",
+      "date_max": "2026-03-21"
+    },
+    "recent": {
+      "games": 30,
+      "accuracy": 0.8,
+      "log_loss": 0.4683551831783296,
+      "roc_auc": 0.8733031674208145,
+      "brier_score": 0.15451979198885363,
+      "avg_confidence": 0.7044992673060655,
+      "date_min": "2026-03-18",
+      "date_max": "2026-03-21"
+    },
+    "prior": {
+      "games": 56,
+      "accuracy": 0.7678571428571429,
+      "log_loss": 0.4966835439871451,
+      "roc_auc": 0.8145833333333333,
+      "brier_score": 0.1643229114455588,
+      "avg_confidence": 0.720222220553218,
+      "date_min": "2026-03-11",
+      "date_max": "2026-03-18"
+    },
+    "recent_window_games": 30
+  },
+  "thunder": {
+    "overall": {
+      "games": 5,
+      "accuracy": 1.0,
+      "log_loss": 0.27537520924957637,
+      "roc_auc": null,
+      "brier_score": 0.07185487356246358,
+      "avg_confidence": 0.7732553843050252,
+      "date_min": "2026-03-12",
+      "date_max": "2026-03-21"
+    },
+    "recent": {
+      "games": 5,
+      "accuracy": 1.0,
+      "log_loss": 0.27537520924957637,
+      "roc_auc": null,
+      "brier_score": 0.07185487356246358,
+      "avg_confidence": 0.7732553843050252,
+      "date_min": "2026-03-12",
+      "date_max": "2026-03-21"
+    },
+    "recent_window_games": 10,
+    "sample_warning": "Thunder sample is still small: 5 completed games, below the recent window of 10."
+  }
+}
