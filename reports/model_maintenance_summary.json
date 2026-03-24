@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-03-24T00:07:34Z",
+  "generated_at_utc": "2026-03-24T00:28:36Z",
   "status": "watch",
   "live_retrain_recommended": false,
   "alerts": [],
@@ -7,8 +7,8 @@
     "Thunder sample is still small: 5 completed games, below the recent window of 10."
   ],
   "production_context": {
-    "last_retrain_utc": null,
-    "n_games_trained": null,
+    "last_retrain_utc": "2026-03-22T20:47:19Z",
+    "n_games_trained": 16539,
     "production_train_seasons": null
   },
   "reference_holdout_metrics": {
