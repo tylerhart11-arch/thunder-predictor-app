@@ -6,7 +6,7 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
-from src.utils import normalize_game_id
+from app.utils import normalize_game_id
 
 
 def predict_dataframe(

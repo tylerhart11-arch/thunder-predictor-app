@@ -9,29 +9,29 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from src.calibration import fit_cv_calibrator, fit_validation_calibrator
-from src.data_cleaning import build_game_level_table, clean_league_logs, merge_actuals_from_scoreboard
-from src.data_ingestion import NBADataIngestion
-from src.data_quality import basic_data_quality_report
-from src.evaluate import (
+from app.calibration import fit_cv_calibrator, fit_validation_calibrator
+from app.data_cleaning import build_game_level_table, clean_league_logs, merge_actuals_from_scoreboard
+from app.data_ingestion import NBADataIngestion
+from app.data_quality import basic_data_quality_report
+from app.evaluate import (
     classification_metrics,
     reliability_curve_df,
     save_confusion_matrix_plot,
     save_reliability_plot,
 )
-from src.feature_engineering import build_team_feature_table, build_training_features, build_upcoming_game_features
-from src.leakage_checks import run_leakage_checks
-from src.models_baseline import logistic_feature_importance, predict_proba as baseline_predict_proba, train_baseline_logistic
-from src.model_monitoring import build_monitoring_artifacts, feature_schema_hash, monitoring_settings
-from src.models_xgb import (
+from app.feature_engineering import build_team_feature_table, build_training_features, build_upcoming_game_features
+from app.leakage_checks import run_leakage_checks
+from app.models_baseline import logistic_feature_importance, predict_proba as baseline_predict_proba, train_baseline_logistic
+from app.model_monitoring import build_monitoring_artifacts, feature_schema_hash, monitoring_settings
+from app.models_xgb import (
     fit_improved_model_with_params,
     improved_feature_importance,
     tune_and_train_improved_model,
 )
-from src.predict import initialize_prediction_archive, predict_dataframe, reconcile_archive_with_actuals
-from src.split import season_holdout_split, split_summary_table
-from src.thunder_report import add_rolling_accuracy, build_thunder_summary, thunder_predictions_only, weekly_performance
-from src.utils import load_csv_if_exists, normalize_game_id, now_utc_iso, save_csv, save_json, to_sqlite
+from app.predict import initialize_prediction_archive, predict_dataframe, reconcile_archive_with_actuals
+from app.split import season_holdout_split, split_summary_table
+from app.thunder_report import add_rolling_accuracy, build_thunder_summary, thunder_predictions_only, weekly_performance
+from app.utils import load_csv_if_exists, normalize_game_id, now_utc_iso, save_csv, save_json, to_sqlite
 
 
 def _pregame_scoreboard_only(schedule: pd.DataFrame) -> pd.DataFrame:
@@ -339,15 +339,15 @@ class NBAPipeline:
         improved_cal_metrics = classification_metrics(y_test, improved_cal_prob)
 
         rel_df = reliability_curve_df(y_test, improved_cal_prob, bins=10)
-        save_csv(rel_df, self.paths.reports_dir / "diagnostics" / "reliability_curve_test.csv")
+        save_csv(rel_df, self.paths.diagnostics_dir / "reliability_curve_test.csv")
         save_reliability_plot(
             rel_df,
-            self.paths.reports_dir / "diagnostics" / "reliability_curve_test.png",
+            self.paths.diagnostics_dir / "reliability_curve_test.png",
             "Improved Model Reliability (Test)",
         )
         save_confusion_matrix_plot(
             improved_cal_metrics,
-            self.paths.reports_dir / "diagnostics" / "confusion_matrix_test.png",
+            self.paths.diagnostics_dir / "confusion_matrix_test.png",
             "Improved Model Confusion Matrix (Test)",
         )
 

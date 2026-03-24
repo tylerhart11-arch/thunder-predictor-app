@@ -13,10 +13,10 @@ data:
   storage:
     sqlite_path: data/nba.sqlite
     raw_dir: data/raw
-    cleaned_dir: data/cleaned
-    features_dir: data/features
-    predictions_dir: data/predictions
-    artifacts_dir: data/artifacts
+    cleaned_dir: data/processed/cleaned
+    features_dir: data/processed/features
+    predictions_dir: data/processed/predictions
+    artifacts_dir: data/processed/artifacts
 
 model:
   target_col: home_win

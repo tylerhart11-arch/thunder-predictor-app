@@ -12,6 +12,7 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
+PROCESSED = DATA / "processed"
 REPORTS = ROOT / "reports"
 
 
@@ -411,8 +412,8 @@ def render_section_grid(cards: list[tuple[str, str]]) -> None:
 def latest_update_timestamp() -> str | None:
     candidates = [
         REPORTS / "metrics_latest.json",
-        DATA / "predictions" / "latest_upcoming_predictions.csv",
-        DATA / "predictions" / "prediction_archive.csv",
+        PROCESSED / "predictions" / "latest_upcoming_predictions.csv",
+        PROCESSED / "predictions" / "prediction_archive.csv",
     ]
     existing = [path for path in candidates if path.exists()]
     if not existing:
@@ -529,14 +530,14 @@ def load_model_maintenance_artifacts() -> dict[str, object]:
 
 
 def load_clean_games() -> pd.DataFrame:
-    df = read_csv(DATA / "cleaned" / "games_clean.csv")
+    df = read_csv(PROCESSED / "cleaned" / "games_clean.csv")
     if not df.empty and "GAME_DATE" in df.columns:
         df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"])
     return df
 
 
 def load_archive() -> pd.DataFrame:
-    df = read_csv(DATA / "predictions" / "prediction_archive.csv")
+    df = read_csv(PROCESSED / "predictions" / "prediction_archive.csv")
     if not df.empty and "GAME_DATE" in df.columns:
         df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"])
     return df
@@ -565,7 +566,7 @@ def is_pregame_status(df: pd.DataFrame) -> pd.Series:
 
 
 def load_upcoming() -> pd.DataFrame:
-    df = read_csv(DATA / "predictions" / "latest_upcoming_predictions.csv")
+    df = read_csv(PROCESSED / "predictions" / "latest_upcoming_predictions.csv")
     if df.empty:
         return df
 

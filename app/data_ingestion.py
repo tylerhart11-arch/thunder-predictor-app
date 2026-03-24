@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 import pandas as pd
 from nba_api.stats.endpoints import leaguegamelog, scoreboardv2
 
-from src.utils import daterange, historical_seasons, normalize_game_id
+from app.utils import daterange, historical_seasons, normalize_game_id
 
 
 @dataclass

@@ -19,8 +19,8 @@ data/nba.sqlite
 data/raw/*
 !data/raw/league_game_log_raw.csv
 !data/raw/scoreboard_raw.csv
-data/features/
-data/cleaned/team_games_clean.csv
+data/processed/features/
+data/processed/cleaned/team_games_clean.csv
 
 # Local model binaries are not required for the hosted dashboard
 models/

@@ -6,9 +6,9 @@ import argparse
 import subprocess
 import sys
 
-from src.config import build_paths, ensure_directories, load_config
-from src.logger import get_logger
-from src.update_pipeline import NBAPipeline
+from app.config import build_paths, ensure_directories, load_config
+from app.logger import get_logger
+from pipelines.update_pipeline import NBAPipeline
 
 
 def parse_args() -> argparse.Namespace:

@@ -7,8 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from src.evaluate import classification_metrics
-from src.utils import now_utc_iso
+from app.evaluate import classification_metrics
+from app.utils import now_utc_iso
 
 
 CONFIDENCE_BIN_EDGES = [0.50, 0.55, 0.60, 0.65, 0.75, 0.85, 1.01]

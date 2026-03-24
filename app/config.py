@@ -20,6 +20,7 @@ class Paths:
     artifacts_dir: Path
     logs_dir: Path
     reports_dir: Path
+    diagnostics_dir: Path
     models_dir: Path
 
 
@@ -53,6 +54,7 @@ def build_paths(cfg: dict[str, Any]) -> Paths:
         artifacts_dir=_resolve(root, storage["artifacts_dir"]),
         logs_dir=(root / "logs").resolve(),
         reports_dir=(root / "reports").resolve(),
+        diagnostics_dir=(root / "reports" / "diagnostics").resolve(),
         models_dir=(root / "models").resolve(),
     )
 
@@ -66,6 +68,7 @@ def ensure_directories(paths: Paths) -> None:
         paths.artifacts_dir,
         paths.logs_dir,
         paths.reports_dir,
+        paths.diagnostics_dir,
         paths.models_dir,
     ]:
         p.mkdir(parents=True, exist_ok=True)

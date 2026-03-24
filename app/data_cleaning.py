@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from src.utils import normalize_game_id
+from app.utils import normalize_game_id
 
 
 def clean_league_logs(raw_df: pd.DataFrame) -> pd.DataFrame:
