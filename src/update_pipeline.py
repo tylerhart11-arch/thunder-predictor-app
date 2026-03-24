@@ -31,7 +31,30 @@ from src.models_xgb import (
 from src.predict import initialize_prediction_archive, predict_dataframe, reconcile_archive_with_actuals
 from src.split import season_holdout_split, split_summary_table
 from src.thunder_report import add_rolling_accuracy, build_thunder_summary, thunder_predictions_only, weekly_performance
-from src.utils import load_csv_if_exists, now_utc_iso, save_csv, save_json, to_sqlite
+from src.utils import load_csv_if_exists, normalize_game_id, now_utc_iso, save_csv, save_json, to_sqlite
+
+
+def _pregame_scoreboard_only(schedule: pd.DataFrame) -> pd.DataFrame:
+    if schedule.empty:
+        return schedule
+
+    out = schedule.copy()
+    if "GAME_STATUS_ID" in out.columns:
+        status_id = pd.to_numeric(out["GAME_STATUS_ID"], errors="coerce")
+        if status_id.notna().any():
+            return out.loc[status_id.eq(1)].copy()
+
+    if "GAME_STATUS_TEXT" in out.columns:
+        status_text = out["GAME_STATUS_TEXT"].fillna("").astype(str).str.strip()
+        live_or_final = status_text.str.contains(
+            r"Final|Qtr|Halftime|Half|OT|End of",
+            case=False,
+            regex=True,
+        )
+        scheduled_time = status_text.str.contains(r"\bET\b", case=False, regex=True)
+        return out.loc[scheduled_time & ~live_or_final].copy()
+
+    return out
 
 
 class NBAPipeline:
@@ -118,8 +141,12 @@ class NBAPipeline:
 
         league_raw = pd.concat([old_league, new_league], ignore_index=True) if not old_league.empty else new_league
         if not league_raw.empty:
-            league_raw["GAME_ID"] = league_raw["GAME_ID"].astype(str)
-            league_raw = league_raw.drop_duplicates(subset=["GAME_ID", "TEAM_ID", "GAME_DATE"]).reset_index(drop=True)
+            league_raw["GAME_ID"] = normalize_game_id(league_raw["GAME_ID"])
+            league_raw["TEAM_ID"] = pd.to_numeric(league_raw["TEAM_ID"], errors="coerce")
+            league_raw = league_raw.dropna(subset=["TEAM_ID"]).copy()
+            league_raw["TEAM_ID"] = league_raw["TEAM_ID"].astype(int)
+            league_raw["GAME_DATE"] = pd.to_datetime(league_raw["GAME_DATE"], errors="coerce", format="mixed")
+            league_raw = league_raw.drop_duplicates(subset=["GAME_ID", "TEAM_ID"], keep="last").reset_index(drop=True)
 
         old_scoreboard = load_csv_if_exists(self.raw_scoreboard_path)
         try:
@@ -137,7 +164,7 @@ class NBAPipeline:
             pd.concat([old_scoreboard, new_scoreboard], ignore_index=True) if not old_scoreboard.empty else new_scoreboard
         )
         if not scoreboard_raw.empty:
-            scoreboard_raw["GAME_ID"] = scoreboard_raw["GAME_ID"].astype(str)
+            scoreboard_raw["GAME_ID"] = normalize_game_id(scoreboard_raw["GAME_ID"])
             scoreboard_raw["GAME_DATE"] = pd.to_datetime(scoreboard_raw["GAME_DATE"])
             scoreboard_raw = scoreboard_raw.sort_values(["GAME_DATE", "GAME_ID"]).drop_duplicates(
                 subset=["GAME_ID"], keep="last"
@@ -393,7 +420,8 @@ class NBAPipeline:
 
         schedule = scoreboard_raw.copy()
         schedule["GAME_DATE"] = pd.to_datetime(schedule["GAME_DATE"])
-        upcoming = schedule[~schedule["IS_FINAL"] & (schedule["GAME_DATE"].dt.date >= date.today())].copy()
+        schedule = _pregame_scoreboard_only(schedule)
+        upcoming = schedule[schedule["GAME_DATE"].dt.date >= date.today()].copy()
         upcoming = upcoming.sort_values(["GAME_DATE", "GAME_ID"]).drop_duplicates(subset=["GAME_ID"])
         if upcoming.empty:
             save_csv(pd.DataFrame(), self.latest_upcoming_path)
@@ -421,7 +449,7 @@ class NBAPipeline:
     def _update_prediction_archive(self, upcoming_predictions: pd.DataFrame, game_level: pd.DataFrame) -> pd.DataFrame:
         archive = initialize_prediction_archive(self.archive_path)
         if not archive.empty:
-            archive["GAME_ID"] = archive["GAME_ID"].astype(str)
+            archive["GAME_ID"] = normalize_game_id(archive["GAME_ID"])
 
         if not upcoming_predictions.empty:
             latest = upcoming_predictions.copy()

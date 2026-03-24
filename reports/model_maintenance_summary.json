@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-03-24T00:28:36Z",
+  "generated_at_utc": "2026-03-24T01:40:31Z",
   "status": "watch",
   "live_retrain_recommended": false,
   "alerts": [],
@@ -26,32 +26,32 @@
   },
   "league": {
     "overall": {
-      "games": 86,
-      "accuracy": 0.7790697674418605,
-      "log_loss": 0.4868015576584884,
-      "roc_auc": 0.8428019856591286,
-      "brier_score": 0.16090321861182444,
-      "avg_confidence": 0.7147374694204903,
+      "games": 91,
+      "accuracy": 0.7692307692307693,
+      "log_loss": 0.4887827279669086,
+      "roc_auc": 0.8381330685203575,
+      "brier_score": 0.16219631988624722,
+      "avg_confidence": 0.7148303183667232,
       "date_min": "2026-03-11",
-      "date_max": "2026-03-21"
+      "date_max": "2026-03-22"
     },
     "recent": {
       "games": 30,
       "accuracy": 0.8,
-      "log_loss": 0.4683551831783296,
-      "roc_auc": 0.8733031674208145,
-      "brier_score": 0.15451979198885363,
-      "avg_confidence": 0.7044992673060655,
+      "log_loss": 0.4741025177805155,
+      "roc_auc": 0.86,
+      "brier_score": 0.15859624907291814,
+      "avg_confidence": 0.7081099617144823,
       "date_min": "2026-03-18",
-      "date_max": "2026-03-21"
+      "date_max": "2026-03-22"
     },
     "prior": {
-      "games": 56,
-      "accuracy": 0.7678571428571429,
-      "log_loss": 0.4966835439871451,
-      "roc_auc": 0.8145833333333333,
-      "brier_score": 0.1643229114455588,
-      "avg_confidence": 0.720222220553218,
+      "games": 61,
+      "accuracy": 0.7540983606557377,
+      "log_loss": 0.49600250346841357,
+      "roc_auc": 0.8255148741418764,
+      "brier_score": 0.16396684651575333,
+      "avg_confidence": 0.7181354118022516,
       "date_min": "2026-03-11",
       "date_max": "2026-03-18"
     },

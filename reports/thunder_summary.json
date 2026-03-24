@@ -1,8 +1,14 @@
 {
   "games": 5,
   "accuracy": 1.0,
+  "last_10_accuracy": 1.0,
   "correct": 5,
   "incorrect": 0,
+  "current_streak": 5,
+  "current_streak_label": "W",
+  "best_streak": 5,
+  "worst_streak": 0,
+  "avg_confidence": 0.5465107686100502,
   "avg_confidence_correct": 0.5465107686100502,
   "avg_confidence_incorrect": null
 }

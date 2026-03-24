@@ -183,10 +183,16 @@ def build_upcoming_game_features(
 
     sched = schedule_df.copy()
     sched["GAME_DATE"] = pd.to_datetime(sched["GAME_DATE"])
-    sched = sched.sort_values(["GAME_DATE", "GAME_ID"]).reset_index(drop=True)
+    sched = sched.sort_values(["GAME_DATE", "GAME_ID"]).drop_duplicates(subset=["GAME_ID"], keep="last").reset_index(drop=True)
 
     post_cols = ["TEAM_ID", "GAME_DATE", "GAMES_PLAYED_POST"] + [f"{c}_POST" for c in BASE_STAT_COLS]
-    state = team_feature_df[post_cols].copy().sort_values(["GAME_DATE", "TEAM_ID"])
+    state = (
+        team_feature_df[post_cols]
+        .copy()
+        .sort_values(["GAME_DATE", "TEAM_ID"])
+        .drop_duplicates(subset=["TEAM_ID", "GAME_DATE"], keep="last")
+        .reset_index(drop=True)
+    )
     state["LAST_GAME_DATE"] = state["GAME_DATE"]
 
     def attach_side(frame: pd.DataFrame, side: str) -> pd.DataFrame:
@@ -245,4 +251,5 @@ def build_upcoming_game_features(
         if c in merged.columns
     ]
     merged = merged[id_cols + list(training_feature_cols)]
+    merged = merged.drop_duplicates(subset=["GAME_ID"], keep="last").reset_index(drop=True)
     return merged

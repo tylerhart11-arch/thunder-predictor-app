@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from json import JSONDecodeError
 from datetime import datetime
 from pathlib import Path
 
@@ -479,14 +480,17 @@ def read_csv(path: Path) -> pd.DataFrame:
         return pd.DataFrame()
     try:
         return pd.read_csv(path)
-    except pd.errors.EmptyDataError:
+    except (pd.errors.EmptyDataError, pd.errors.ParserError, UnicodeDecodeError, ValueError):
         return pd.DataFrame()
 
 
 def read_json(path: Path) -> dict:
     if not path.exists():
         return {}
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (JSONDecodeError, OSError, ValueError):
+        return {}
 
 
 def load_optional_csv(path: Path, parse_dates: list[str] | None = None) -> pd.DataFrame:
@@ -538,8 +542,39 @@ def load_archive() -> pd.DataFrame:
     return df
 
 
+def is_pregame_status(df: pd.DataFrame) -> pd.Series:
+    if df.empty:
+        return pd.Series(dtype=bool)
+
+    if "GAME_STATUS_ID" in df.columns:
+        status_id = pd.to_numeric(df["GAME_STATUS_ID"], errors="coerce")
+        if status_id.notna().any():
+            return status_id.eq(1)
+
+    if "GAME_STATUS_TEXT" in df.columns:
+        status_text = df["GAME_STATUS_TEXT"].fillna("").astype(str).str.strip()
+        live_or_final = status_text.str.contains(
+            r"Final|Qtr|Halftime|Half|OT|End of",
+            case=False,
+            regex=True,
+        )
+        scheduled_time = status_text.str.contains(r"\bET\b", case=False, regex=True)
+        return scheduled_time & ~live_or_final
+
+    return pd.Series(True, index=df.index)
+
+
 def load_upcoming() -> pd.DataFrame:
     df = read_csv(DATA / "predictions" / "latest_upcoming_predictions.csv")
-    if not df.empty and "GAME_DATE" in df.columns:
-        df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"])
+    if df.empty:
+        return df
+
+    if "GAME_DATE" in df.columns:
+        df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"], errors="coerce")
+        df = df[df["GAME_DATE"].notna()].copy()
+
+    pregame_mask = is_pregame_status(df)
+    if not pregame_mask.empty:
+        df = df.loc[pregame_mask].copy()
+
     return df

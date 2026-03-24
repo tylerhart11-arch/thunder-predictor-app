@@ -5,6 +5,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from src.utils import normalize_game_id
+
 
 def clean_league_logs(raw_df: pd.DataFrame) -> pd.DataFrame:
     if raw_df.empty:
@@ -13,7 +15,7 @@ def clean_league_logs(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = raw_df.copy()
     df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"])
     df["TEAM_ID"] = df["TEAM_ID"].astype(int)
-    df["GAME_ID"] = df["GAME_ID"].astype(str)
+    df["GAME_ID"] = normalize_game_id(df["GAME_ID"])
 
     matchup = df["MATCHUP"].fillna("").astype(str)
     is_home = matchup.str.contains(r"\bvs\.?\b", case=False, regex=True)
@@ -49,7 +51,12 @@ def clean_league_logs(raw_df: pd.DataFrame) -> pd.DataFrame:
         "AST",
         "TOV",
     ]
-    cleaned = df[keep].sort_values(["GAME_DATE", "GAME_ID", "TEAM_ID"]).reset_index(drop=True)
+    cleaned = (
+        df[keep]
+        .sort_values(["GAME_DATE", "GAME_ID", "TEAM_ID"])
+        .drop_duplicates(subset=["GAME_ID", "TEAM_ID"], keep="last")
+        .reset_index(drop=True)
+    )
     return cleaned
 
 
@@ -146,7 +153,7 @@ def merge_actuals_from_scoreboard(
 
     base = game_level_df.copy()
     score = scoreboard_df.copy()
-    score["GAME_ID"] = score["GAME_ID"].astype(str)
+    score["GAME_ID"] = normalize_game_id(score["GAME_ID"])
     score["GAME_DATE"] = pd.to_datetime(score["GAME_DATE"])
 
     score_final = score[score["IS_FINAL"]].copy()

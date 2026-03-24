@@ -6,6 +6,8 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
+from src.utils import normalize_game_id
+
 
 def predict_dataframe(
     model,
@@ -42,6 +44,8 @@ def initialize_prediction_archive(path: Path) -> pd.DataFrame:
     archive = pd.read_csv(path)
     if "GAME_DATE" in archive.columns:
         archive["GAME_DATE"] = pd.to_datetime(archive["GAME_DATE"], errors="coerce")
+    if "GAME_ID" in archive.columns:
+        archive["GAME_ID"] = normalize_game_id(archive["GAME_ID"])
     return archive
 
 
@@ -52,12 +56,12 @@ def reconcile_archive_with_actuals(archive_df: pd.DataFrame, actual_games: pd.Da
     if "GAME_DATE" in actual_games.columns:
         actual_cols.append("GAME_DATE")
     actual = actual_games[actual_cols].copy().rename(columns={"HOME_WIN": "ACTUAL_HOME_WIN"})
-    actual["GAME_ID"] = actual["GAME_ID"].astype(str)
+    actual["GAME_ID"] = normalize_game_id(actual["GAME_ID"])
     if "GAME_DATE" in actual.columns:
         actual["GAME_DATE"] = pd.to_datetime(actual["GAME_DATE"], errors="coerce")
 
     out = archive_df.copy()
-    out["GAME_ID"] = out["GAME_ID"].astype(str)
+    out["GAME_ID"] = normalize_game_id(out["GAME_ID"])
     out = out.drop(columns=["ACTUAL_HOME_WIN", "IS_CORRECT"], errors="ignore").merge(
         actual,
         on="GAME_ID",

@@ -66,3 +66,10 @@ def to_sqlite(df: pd.DataFrame, table: str, sqlite_path: Path, if_exists: str = 
 
 def now_utc_iso() -> str:
     return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+
+def normalize_game_id(series: pd.Series) -> pd.Series:
+    out = series.astype(str).str.strip()
+    out = out.str.replace(r"\.0$", "", regex=True)
+    out = out.str.replace(r"\s+", "", regex=True)
+    return out.str.zfill(10)

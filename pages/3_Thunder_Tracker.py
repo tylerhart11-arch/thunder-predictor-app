@@ -10,6 +10,7 @@ from dashboard.helpers import (
     load_archive,
     load_model_maintenance_artifacts,
     load_optional_csv,
+    load_upcoming,
     read_json,
     style_plotly,
 )
@@ -70,6 +71,7 @@ apply_casino_theme(
 thunder_summary = read_json(REPORTS / "thunder_summary.json")
 maintenance = load_model_maintenance_artifacts()
 archive = load_archive()
+upcoming = load_upcoming()
 if archive.empty:
     st.warning("Prediction archive not found yet. Run the pipeline first.")
     st.stop()
@@ -81,7 +83,15 @@ thunder = archive[
     (archive["HOME_TEAM_ABBREVIATION"] == "OKC") | (archive["AWAY_TEAM_ABBREVIATION"] == "OKC")
 ].copy()
 thunder["GAME_DATE"] = pd.to_datetime(thunder["GAME_DATE"], errors="coerce")
-upcoming_thunder = thunder[thunder["ACTUAL_HOME_WIN"].isna()].sort_values("GAME_DATE")
+if {"HOME_TEAM_ABBREVIATION", "AWAY_TEAM_ABBREVIATION"}.issubset(upcoming.columns):
+    upcoming_thunder = upcoming[
+        (upcoming["HOME_TEAM_ABBREVIATION"] == "OKC") | (upcoming["AWAY_TEAM_ABBREVIATION"] == "OKC")
+    ].copy()
+    if not upcoming_thunder.empty and "GAME_DATE" in upcoming_thunder.columns:
+        upcoming_thunder["GAME_DATE"] = pd.to_datetime(upcoming_thunder["GAME_DATE"], errors="coerce")
+        upcoming_thunder = upcoming_thunder.sort_values("GAME_DATE")
+else:
+    upcoming_thunder = pd.DataFrame()
 
 completed = completed_report.copy()
 if completed.empty:
@@ -285,11 +295,11 @@ else:
                 ),
                 _first_present(
                     maintenance_buckets,
-                    ["mean_pred_prob", "avg_pred_prob", "predicted_prob", "pred_prob"],
+                    ["mean_pred_prob", "avg_pred_prob", "avg_confidence", "predicted_prob", "pred_prob"],
                 ),
                 _first_present(
                     maintenance_buckets,
-                    ["observed_win_rate", "actual_win_rate", "win_rate", "observed_rate"],
+                    ["observed_win_rate", "observed_accuracy", "actual_win_rate", "win_rate", "observed_rate"],
                 ),
             ]
             if col

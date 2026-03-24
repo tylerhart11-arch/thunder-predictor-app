@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 import pandas as pd
 from nba_api.stats.endpoints import leaguegamelog, scoreboardv2
 
-from src.utils import daterange, historical_seasons
+from src.utils import daterange, historical_seasons, normalize_game_id
 
 
 @dataclass
@@ -110,12 +110,12 @@ class NBADataIngestion:
             return pd.DataFrame()
 
         league_logs = pd.concat(frames, ignore_index=True)
-        league_logs["GAME_ID"] = league_logs["GAME_ID"].astype(str)
-        league_logs["GAME_DATE"] = pd.to_datetime(league_logs["GAME_DATE"], errors="coerce")
+        league_logs["GAME_ID"] = normalize_game_id(league_logs["GAME_ID"])
+        league_logs["GAME_DATE"] = pd.to_datetime(league_logs["GAME_DATE"], errors="coerce", format="mixed")
         league_logs["TEAM_ID"] = pd.to_numeric(league_logs["TEAM_ID"], errors="coerce")
         league_logs = league_logs.dropna(subset=["GAME_ID", "GAME_DATE", "TEAM_ID"]).copy()
         league_logs["TEAM_ID"] = league_logs["TEAM_ID"].astype(int)
-        league_logs = league_logs.drop_duplicates(subset=["GAME_ID", "TEAM_ID", "GAME_DATE"]).reset_index(drop=True)
+        league_logs = league_logs.drop_duplicates(subset=["GAME_ID", "TEAM_ID"], keep="last").reset_index(drop=True)
         self.logger.info("Historical league logs pulled: %s rows", len(league_logs))
         return league_logs
 
@@ -156,7 +156,7 @@ class NBADataIngestion:
             return pd.DataFrame()
 
         game_header = game_header.copy()
-        game_header["GAME_ID"] = game_header["GAME_ID"].astype(str)
+        game_header["GAME_ID"] = normalize_game_id(game_header["GAME_ID"])
 
         required_line_cols = {"GAME_ID", "TEAM_ID", "TEAM_ABBREVIATION", "PTS"}
         if line_score.empty or not required_line_cols.issubset(set(line_score.columns)):
@@ -167,7 +167,7 @@ class NBADataIngestion:
             merged["AWAY_PTS"] = pd.NA
         else:
             line_score = line_score.copy()
-            line_score["GAME_ID"] = line_score["GAME_ID"].astype(str)
+            line_score["GAME_ID"] = normalize_game_id(line_score["GAME_ID"])
             home = line_score.rename(
                 columns={
                     "TEAM_ID": "HOME_TEAM_ID",
