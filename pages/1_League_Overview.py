@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import plotly.express as px
+import pandas as pd
 import streamlit as st
 
 from dashboard.helpers import apply_casino_theme, load_clean_games, style_plotly
@@ -16,7 +17,30 @@ if games.empty:
     st.warning("No cleaned game data found. Run a full build first.")
     st.stop()
 
-games["HOME_WIN"] = games["HOME_WIN"].astype(int)
+required_columns = {
+    "GAME_ID",
+    "GAME_DATE",
+    "HOME_TEAM_ABBREVIATION",
+    "AWAY_TEAM_ABBREVIATION",
+    "HOME_PTS",
+    "AWAY_PTS",
+    "HOME_WIN",
+}
+missing_columns = sorted(required_columns - set(games.columns))
+if missing_columns:
+    st.error(
+        "League Overview cannot load because expected game columns are missing: "
+        + ", ".join(missing_columns)
+    )
+    st.stop()
+
+games["GAME_DATE"] = pd.to_datetime(games["GAME_DATE"], errors="coerce")
+games = games[games["GAME_DATE"].notna()].copy()
+if games.empty:
+    st.warning("No valid game dates available in cleaned game data.")
+    st.stop()
+
+games["HOME_WIN"] = pd.to_numeric(games["HOME_WIN"], errors="coerce").fillna(0).astype(int).clip(0, 1)
 games["AWAY_WIN"] = 1 - games["HOME_WIN"]
 
 season_games = games.copy()
