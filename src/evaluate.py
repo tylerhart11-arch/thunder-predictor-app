@@ -34,7 +34,16 @@ def classification_metrics(y_true: pd.Series, y_prob: np.ndarray, threshold: flo
 
 
 def reliability_curve_df(y_true: pd.Series, y_prob: np.ndarray, bins: int = 10) -> pd.DataFrame:
-    frac_pos, mean_pred = calibration_curve(y_true.astype(int), y_prob, n_bins=bins, strategy="quantile")
+    y_true_arr = y_true.astype(int).to_numpy()
+    y_prob_arr = np.clip(np.asarray(y_prob, dtype=float), 1e-6, 1 - 1e-6)
+    if len(y_true_arr) < 2 or len(np.unique(y_true_arr)) < 2:
+        return pd.DataFrame(columns=["mean_pred_prob", "observed_win_rate"])
+
+    n_bins = max(1, min(int(bins), len(y_true_arr)))
+    try:
+        frac_pos, mean_pred = calibration_curve(y_true_arr, y_prob_arr, n_bins=n_bins, strategy="quantile")
+    except ValueError:
+        frac_pos, mean_pred = calibration_curve(y_true_arr, y_prob_arr, n_bins=n_bins, strategy="uniform")
     return pd.DataFrame({"mean_pred_prob": mean_pred, "observed_win_rate": frac_pos})
 
 

@@ -122,6 +122,20 @@ c2.metric("Accuracy", _format_pct(accuracy))
 c3.metric("Correct", int(thunder_summary.get("correct", correct_games)))
 c4.metric("Incorrect", int(thunder_summary.get("incorrect", incorrect_games)))
 
+if any(
+    thunder_summary.get(key) is not None
+    for key in ["last_10_accuracy", "current_streak", "avg_confidence"]
+):
+    e1, e2, e3 = st.columns(3)
+    e1.metric("Last 10 Accuracy", _format_pct(thunder_summary.get("last_10_accuracy")))
+    streak_label = thunder_summary.get("current_streak_label")
+    streak_value = thunder_summary.get("current_streak")
+    if streak_label and streak_value is not None:
+        e2.metric("Current Streak", f"{streak_label}{abs(int(streak_value))}")
+    else:
+        e2.metric("Current Streak", "N/A")
+    e3.metric("Avg Confidence", _format_pct(thunder_summary.get("avg_confidence")))
+
 if completed_games and completed_games < 20:
     st.caption("Thunder sample size is still small, so read the accuracy signal with caution.")
 

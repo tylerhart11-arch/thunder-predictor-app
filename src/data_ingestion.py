@@ -4,7 +4,6 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import date, timedelta
-from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -59,7 +58,9 @@ class NBADataIngestion:
             except Exception as exc:  # noqa: BLE001
                 last_exc = exc
                 self.logger.warning("API call failed (attempt %s/%s): %s", attempt, retries, exc)
-                time.sleep(sleep_seconds * attempt)
+                if attempt < retries:
+                    backoff = min(sleep_seconds * (2 ** (attempt - 1)), 10.0)
+                    time.sleep(backoff)
         raise RuntimeError(f"API call failed after {retries} attempts: {last_exc}") from last_exc
 
     def fetch_league_logs_for_season(self, season: str, season_type: str = "Regular Season") -> pd.DataFrame:
@@ -109,6 +110,11 @@ class NBADataIngestion:
             return pd.DataFrame()
 
         league_logs = pd.concat(frames, ignore_index=True)
+        league_logs["GAME_ID"] = league_logs["GAME_ID"].astype(str)
+        league_logs["GAME_DATE"] = pd.to_datetime(league_logs["GAME_DATE"], errors="coerce")
+        league_logs["TEAM_ID"] = pd.to_numeric(league_logs["TEAM_ID"], errors="coerce")
+        league_logs = league_logs.dropna(subset=["GAME_ID", "GAME_DATE", "TEAM_ID"]).copy()
+        league_logs["TEAM_ID"] = league_logs["TEAM_ID"].astype(int)
         league_logs = league_logs.drop_duplicates(subset=["GAME_ID", "TEAM_ID", "GAME_DATE"]).reset_index(drop=True)
         self.logger.info("Historical league logs pulled: %s rows", len(league_logs))
         return league_logs
@@ -120,13 +126,16 @@ class NBADataIngestion:
         def _call():
             endpoint = scoreboardv2.ScoreboardV2(day_offset=0, game_date=game_date_param, league_id="00")
             payload = endpoint.get_dict()
-            result_sets = payload.get("resultSets", [])
+            result_sets = payload.get("resultSets") or payload.get("resultSet") or []
+            if isinstance(result_sets, dict):
+                result_sets = [result_sets]
             data_map: dict[str, pd.DataFrame] = {}
             for rs in result_sets:
                 name = rs.get("name")
                 headers = rs.get("headers", [])
                 rows = rs.get("rowSet", [])
-                data_map[name] = pd.DataFrame(rows, columns=headers)
+                if name:
+                    data_map[name] = pd.DataFrame(rows, columns=headers)
             game_header = data_map.get("GameHeader", pd.DataFrame())
             line_score = data_map.get("LineScore", pd.DataFrame())
             return game_header, line_score
@@ -134,6 +143,20 @@ class NBADataIngestion:
         game_header, line_score = self._safe_call(_call)
         if game_header.empty:
             return pd.DataFrame()
+
+        required_game_cols = {
+            "GAME_ID",
+            "GAME_DATE_EST",
+            "GAME_STATUS_ID",
+            "GAME_STATUS_TEXT",
+            "HOME_TEAM_ID",
+            "VISITOR_TEAM_ID",
+        }
+        if not required_game_cols.issubset(set(game_header.columns)):
+            return pd.DataFrame()
+
+        game_header = game_header.copy()
+        game_header["GAME_ID"] = game_header["GAME_ID"].astype(str)
 
         required_line_cols = {"GAME_ID", "TEAM_ID", "TEAM_ABBREVIATION", "PTS"}
         if line_score.empty or not required_line_cols.issubset(set(line_score.columns)):
@@ -143,6 +166,8 @@ class NBADataIngestion:
             merged["HOME_PTS"] = pd.NA
             merged["AWAY_PTS"] = pd.NA
         else:
+            line_score = line_score.copy()
+            line_score["GAME_ID"] = line_score["GAME_ID"].astype(str)
             home = line_score.rename(
                 columns={
                     "TEAM_ID": "HOME_TEAM_ID",
@@ -171,7 +196,10 @@ class NBADataIngestion:
             if "AWAY_TEAM_ID" in merged.columns:
                 merged = merged.drop(columns=["AWAY_TEAM_ID"])
 
-        merged["GAME_DATE"] = pd.to_datetime(merged["GAME_DATE_EST"]).dt.date
+        merged["GAME_DATE"] = pd.to_datetime(merged["GAME_DATE_EST"], errors="coerce")
+        if merged["GAME_DATE"].isna().all():
+            merged["GAME_DATE"] = pd.Timestamp(d)
+        merged["GAME_DATE"] = merged["GAME_DATE"].dt.date
         merged["IS_FINAL"] = merged["GAME_STATUS_TEXT"].str.contains("Final", case=False, na=False)
         merged["INGESTED_AT_UTC"] = pd.Timestamp.utcnow().isoformat()
         return merged[

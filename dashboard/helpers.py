@@ -432,6 +432,48 @@ def render_update_pill(label: str) -> None:
     )
 
 
+def format_probability(value: float | int | None) -> str:
+    if value is None or pd.isna(value):
+        return "N/A"
+    return f"{float(value):.1%}"
+
+
+def format_confidence(value: float | int | None) -> str:
+    if value is None or pd.isna(value):
+        return "N/A"
+    return f"{float(value):.0%}"
+
+
+def matchup_label(home_team: str | None, away_team: str | None) -> str:
+    home = home_team or "HOME"
+    away = away_team or "AWAY"
+    return f"{away} @ {home}"
+
+
+def probability_edge(home_prob: float | int | None) -> float | None:
+    if home_prob is None or pd.isna(home_prob):
+        return None
+    return abs(float(home_prob) - 0.5) * 2
+
+
+def confidence_band(home_prob: float | int | None) -> str:
+    edge = probability_edge(home_prob)
+    if edge is None:
+        return "N/A"
+    if edge >= 0.60:
+        return "Strong edge"
+    if edge >= 0.30:
+        return "Lean"
+    return "Toss-up"
+
+
+def pick_label(home_prob: float | int | None, home_team: str | None, away_team: str | None) -> str:
+    if home_prob is None or pd.isna(home_prob):
+        return "N/A"
+    winner = home_team if float(home_prob) >= 0.5 else away_team
+    return winner or "N/A"
+
+
 def read_csv(path: Path) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame()

@@ -97,17 +97,27 @@ def tune_and_train_improved_model(
     best_model = None
     best_params = None
     best_logloss = float("inf")
+    early_stopping_rounds = int(xgb_cfg.get("early_stopping_rounds", 30))
 
     for i, params in enumerate(candidates, start=1):
         logger.info("Tuning candidate %s/%s: %s", i, len(candidates), params)
         if xgb_cfg.get("use_xgboost", True) and XGBOOST_AVAILABLE:
             model = _build_xgb(params, seed=seed)
-            model.fit(
-                X_train,
-                y_train,
-                eval_set=[(X_valid, y_valid)],
-                verbose=False,
-            )
+            try:
+                model.fit(
+                    X_train,
+                    y_train,
+                    eval_set=[(X_valid, y_valid)],
+                    early_stopping_rounds=early_stopping_rounds,
+                    verbose=False,
+                )
+            except TypeError:
+                model.fit(
+                    X_train,
+                    y_train,
+                    eval_set=[(X_valid, y_valid)],
+                    verbose=False,
+                )
         else:
             model = _build_fallback(params, seed=seed)
             model.fit(X_train, y_train)
@@ -119,6 +129,9 @@ def tune_and_train_improved_model(
             best_logloss = val_ll
             best_model = model
             best_params = params
+
+    if best_model is None or best_params is None:
+        raise RuntimeError("No improved-model candidate could be trained successfully.")
 
     results_df = pd.DataFrame(results).sort_values("validation_log_loss").reset_index(drop=True)
     logger.info("Best improved-model params: %s (validation log_loss=%.5f)", best_params, best_logloss)
