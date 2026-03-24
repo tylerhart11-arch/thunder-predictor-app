@@ -435,13 +435,51 @@ def render_update_pill(label: str) -> None:
 def read_csv(path: Path) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame()
-    return pd.read_csv(path)
+    try:
+        return pd.read_csv(path)
+    except pd.errors.EmptyDataError:
+        return pd.DataFrame()
 
 
 def read_json(path: Path) -> dict:
     if not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_optional_csv(path: Path, parse_dates: list[str] | None = None) -> pd.DataFrame:
+    df = read_csv(path)
+    if df.empty:
+        return df
+
+    for col in parse_dates or []:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce")
+    return df
+
+
+def load_optional_json(path: Path) -> dict:
+    return read_json(path)
+
+
+def load_model_maintenance_artifacts() -> dict[str, object]:
+    return {
+        "summary": load_optional_json(REPORTS / "model_maintenance_summary.json"),
+        "windows": load_optional_csv(
+            REPORTS / "model_maintenance_windows.csv",
+            parse_dates=[
+                "GAME_DATE",
+                "WINDOW_START",
+                "WINDOW_END",
+                "window_start",
+                "window_end",
+                "START_DATE",
+                "END_DATE",
+            ],
+        ),
+        "segments": load_optional_csv(REPORTS / "model_maintenance_segments.csv"),
+        "confidence_buckets": load_optional_csv(REPORTS / "model_maintenance_confidence_buckets.csv"),
+    }
 
 
 def load_clean_games() -> pd.DataFrame:

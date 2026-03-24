@@ -40,3 +40,12 @@ model:
 update:
   retrain_every_days: 7
   min_new_games_for_retrain: 40
+  performance_monitoring:
+    enabled: true
+    recent_games_window: 30
+    min_completed_games: 60
+    min_prior_games: 30
+    accuracy_drop_threshold: 0.05
+    log_loss_increase_threshold: 0.05
+    brier_increase_threshold: 0.02
+    thunder_recent_games_window: 10

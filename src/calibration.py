@@ -5,6 +5,7 @@ from typing import Any
 
 import numpy as np
 from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 
@@ -42,10 +43,9 @@ def fit_validation_calibrator(base_model, X_calib, y_calib, method: str = "isoto
 
 
 def fit_cv_calibrator(base_model, X_train, y_train, method: str = "isotonic", cv: int = 3):
-    # Compatibility helper when sklearn prefit calibration is unavailable.
-    model_for_cal = clone(base_model)
-    model_for_cal.fit(X_train, y_train)
-    return fit_validation_calibrator(model_for_cal, X_train, y_train, method=method)
+    calibrated_model = CalibratedClassifierCV(estimator=clone(base_model), method=method, cv=cv)
+    calibrated_model.fit(X_train, y_train)
+    return calibrated_model
 
 
 def calibrated_predict_proba(calibrator, X) -> np.ndarray:

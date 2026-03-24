@@ -22,6 +22,7 @@ from src.evaluate import (
 from src.feature_engineering import build_team_feature_table, build_training_features, build_upcoming_game_features
 from src.leakage_checks import run_leakage_checks
 from src.models_baseline import logistic_feature_importance, predict_proba as baseline_predict_proba, train_baseline_logistic
+from src.model_monitoring import build_monitoring_artifacts, feature_schema_hash, monitoring_settings
 from src.models_xgb import (
     fit_improved_model_with_params,
     improved_feature_importance,
@@ -50,6 +51,10 @@ class NBAPipeline:
         self.archive_path = self.paths.predictions_dir / "prediction_archive.csv"
         self.latest_upcoming_path = self.paths.predictions_dir / "latest_upcoming_predictions.csv"
         self.metrics_path = self.paths.reports_dir / "metrics_latest.json"
+        self.maintenance_summary_path = self.paths.reports_dir / "model_maintenance_summary.json"
+        self.maintenance_windows_path = self.paths.reports_dir / "model_maintenance_windows.csv"
+        self.maintenance_segments_path = self.paths.reports_dir / "model_maintenance_segments.csv"
+        self.maintenance_confidence_path = self.paths.reports_dir / "model_maintenance_confidence_buckets.csv"
         self.leakage_path = self.paths.reports_dir / "leakage_report.json"
         self.dq_path = self.paths.reports_dir / "data_quality.json"
         self.model_meta_path = self.paths.models_dir / "model_metadata.json"
@@ -76,7 +81,12 @@ class NBAPipeline:
         team_features, training_df, feature_cols = self._feature_build_and_store(team_games, game_level)
         self._save_quality_reports(team_games, game_level, training_df, feature_cols)
 
-        should_retrain = self._should_retrain(force_retrain=force_retrain, n_games=len(training_df))
+        should_retrain = self._should_retrain(
+            force_retrain=force_retrain,
+            n_games=len(training_df),
+            feature_cols=feature_cols,
+            actual_games=game_level,
+        )
         if should_retrain:
             model_bundle = self._train_and_store_models(training_df, feature_cols)
         else:
@@ -91,6 +101,7 @@ class NBAPipeline:
         )
         archive = self._update_prediction_archive(upcoming_predictions, game_level)
         self._build_thunder_outputs(archive)
+        self._build_model_maintenance_outputs(archive)
 
     def _ingest_and_store(self, full_history: bool) -> tuple[pd.DataFrame, pd.DataFrame]:
         old_league = load_csv_if_exists(self.raw_league_path)
@@ -183,27 +194,55 @@ class NBAPipeline:
         save_json(dq_report, self.dq_path)
         save_json(leak_report, self.leakage_path)
 
-    def _should_retrain(self, force_retrain: bool, n_games: int) -> bool:
+    def _should_retrain(
+        self,
+        force_retrain: bool,
+        n_games: int,
+        feature_cols: list[str],
+        actual_games: pd.DataFrame,
+    ) -> bool:
         if force_retrain:
             return True
         if not self.improved_model_path.exists() or not self.calibrator_path.exists() or not self.model_meta_path.exists():
             return True
 
-        meta = json.loads(self.model_meta_path.read_text(encoding="utf-8"))
+        meta = self._load_model_meta()
         last_retrain = pd.to_datetime(meta.get("last_retrain_utc", None), utc=True)
         prev_games = int(meta.get("n_games_trained", 0))
         retrain_days = int(self.cfg["update"]["retrain_every_days"])
         min_new_games = int(self.cfg["update"]["min_new_games_for_retrain"])
+        stored_feature_hash = meta.get("feature_schema_hash")
+        current_feature_hash = feature_schema_hash(feature_cols)
+
+        if stored_feature_hash and stored_feature_hash != current_feature_hash:
+            self.logger.info("Retrain triggered: feature schema changed since the last production model fit.")
+            return True
 
         days_since = (datetime.now(timezone.utc) - last_retrain).days if pd.notna(last_retrain) else 999
         new_games = max(0, n_games - prev_games)
         should = days_since >= retrain_days or new_games >= min_new_games
+
+        monitoring_cfg = monitoring_settings(self.cfg)
+        live_retrain = False
+        if monitoring_cfg.get("enabled", True):
+            archive = initialize_prediction_archive(self.archive_path)
+            if not archive.empty:
+                live_archive = reconcile_archive_with_actuals(archive, actual_games)
+                maintenance = self._build_monitoring_artifacts(live_archive)
+                live_retrain = bool(maintenance.summary.get("live_retrain_recommended", False))
+                if live_retrain:
+                    self.logger.warning(
+                        "Live maintenance alert recommends retraining: %s",
+                        " | ".join(maintenance.summary.get("alerts", [])),
+                    )
+        should = should or live_retrain
         self.logger.info(
-            "Retrain check: days_since=%s, new_games=%s, thresholds=(%s days, %s games), should_retrain=%s",
+            "Retrain check: days_since=%s, new_games=%s, thresholds=(%s days, %s games), live_retrain=%s, should_retrain=%s",
             days_since,
             new_games,
             retrain_days,
             min_new_games,
+            live_retrain,
             should,
         )
         return should
@@ -288,9 +327,9 @@ class NBAPipeline:
         imp_df = improved_feature_importance(improved_train_model, feature_cols)
         save_csv(imp_df, self.paths.reports_dir / "improved_feature_importance.csv")
 
-        train_valid_df = pd.concat([train_df, valid_df], ignore_index=True).sort_values("GAME_DATE")
+        production_train_df = training_df.sort_values("GAME_DATE").reset_index(drop=True)
         final_model = fit_improved_model_with_params(
-            train_df=train_valid_df,
+            train_df=production_train_df,
             feature_cols=feature_cols,
             target_col=target_col,
             params=best_params,
@@ -298,8 +337,8 @@ class NBAPipeline:
         )
         final_calibrator = fit_cv_calibrator(
             base_model=final_model,
-            X_train=train_valid_df[feature_cols],
-            y_train=train_valid_df[target_col].astype(int),
+            X_train=production_train_df[feature_cols],
+            y_train=production_train_df[target_col].astype(int),
             method="isotonic",
             cv=3,
         )
@@ -327,6 +366,9 @@ class NBAPipeline:
                 "last_retrain_utc": now_utc_iso(),
                 "n_games_trained": int(len(training_df)),
                 "best_params": best_params,
+                "feature_schema_hash": feature_schema_hash(feature_cols),
+                "feature_cols": feature_cols,
+                "production_train_seasons": sorted(production_train_df["SEASON"].dropna().astype(str).unique().tolist()),
             },
             self.model_meta_path,
         )
@@ -431,3 +473,39 @@ class NBAPipeline:
         to_sqlite(thunder, "thunder_predictions_all", self.paths.sqlite_path, if_exists="replace")
         to_sqlite(rolling, "thunder_predictions_completed", self.paths.sqlite_path, if_exists="replace")
         to_sqlite(weekly, "thunder_weekly_summary", self.paths.sqlite_path, if_exists="replace")
+
+    def _build_model_maintenance_outputs(self, archive: pd.DataFrame) -> None:
+        maintenance = self._build_monitoring_artifacts(archive)
+
+        save_json(maintenance.summary, self.maintenance_summary_path)
+        save_csv(maintenance.windows, self.maintenance_windows_path)
+        save_csv(maintenance.segments, self.maintenance_segments_path)
+        save_csv(maintenance.confidence_buckets, self.maintenance_confidence_path)
+
+        to_sqlite(maintenance.windows, "model_maintenance_windows", self.paths.sqlite_path, if_exists="replace")
+        to_sqlite(maintenance.segments, "model_maintenance_segments", self.paths.sqlite_path, if_exists="replace")
+        to_sqlite(
+            maintenance.confidence_buckets,
+            "model_maintenance_confidence_buckets",
+            self.paths.sqlite_path,
+            if_exists="replace",
+        )
+
+    def _build_monitoring_artifacts(self, archive: pd.DataFrame):
+        return build_monitoring_artifacts(
+            pred_archive=archive,
+            thunder_abbr=self.cfg["project"]["thunder_team_abbr"],
+            monitoring_cfg=monitoring_settings(self.cfg),
+            model_meta=self._load_model_meta(),
+            reference_metrics=self._load_metrics(),
+        )
+
+    def _load_model_meta(self) -> dict[str, Any]:
+        if not self.model_meta_path.exists():
+            return {}
+        return json.loads(self.model_meta_path.read_text(encoding="utf-8"))
+
+    def _load_metrics(self) -> dict[str, Any]:
+        if not self.metrics_path.exists():
+            return {}
+        return json.loads(self.metrics_path.read_text(encoding="utf-8"))

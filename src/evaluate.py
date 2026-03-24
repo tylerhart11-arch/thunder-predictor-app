@@ -21,10 +21,11 @@ def classification_metrics(y_true: pd.Series, y_prob: np.ndarray, threshold: flo
     y_prob_arr = np.clip(np.asarray(y_prob, dtype=float), 1e-6, 1 - 1e-6)
     y_pred_arr = (y_prob_arr >= threshold).astype(int)
     tn, fp, fn, tp = confusion_matrix(y_true_arr, y_pred_arr, labels=[0, 1]).ravel()
+    unique_classes = np.unique(y_true_arr)
     out = {
         "accuracy": float(accuracy_score(y_true_arr, y_pred_arr)),
-        "log_loss": float(log_loss(y_true_arr, y_prob_arr)),
-        "roc_auc": float(roc_auc_score(y_true_arr, y_prob_arr)),
+        "log_loss": float(log_loss(y_true_arr, y_prob_arr, labels=[0, 1])),
+        "roc_auc": float(roc_auc_score(y_true_arr, y_prob_arr)) if len(unique_classes) > 1 else None,
         "brier_score": float(brier_score_loss(y_true_arr, y_prob_arr)),
         "confusion_matrix": {"tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp)},
         "n_obs": int(len(y_true_arr)),
