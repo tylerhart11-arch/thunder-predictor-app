@@ -531,14 +531,14 @@ def load_model_maintenance_artifacts() -> dict[str, object]:
 def load_clean_games() -> pd.DataFrame:
     df = read_csv(DATA / "cleaned" / "games_clean.csv")
     if not df.empty and "GAME_DATE" in df.columns:
-        df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"])
+        df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"], errors="coerce")
     return df
 
 
 def load_archive() -> pd.DataFrame:
     df = read_csv(DATA / "predictions" / "prediction_archive.csv")
     if not df.empty and "GAME_DATE" in df.columns:
-        df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"])
+        df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"], errors="coerce")
     return df
 
 

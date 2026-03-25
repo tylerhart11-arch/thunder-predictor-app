@@ -15,6 +15,10 @@ from dashboard.helpers import (
 )
 
 
+def _missing_columns(df, required_columns: list[str]) -> list[str]:
+    return sorted(set(required_columns) - set(df.columns))
+
+
 st.set_page_config(page_title="NBA Thunder Predictor", page_icon=":basketball:", layout="wide")
 apply_casino_theme(
     page_title="NBA Game Outcome Predictor",
@@ -57,7 +61,19 @@ preview_left, preview_right = st.columns(2)
 
 with preview_left:
     st.subheader("Upcoming Board")
-    if upcoming.empty:
+    upcoming_required = [
+        "GAME_DATE",
+        "HOME_TEAM_ABBREVIATION",
+        "AWAY_TEAM_ABBREVIATION",
+        "PRED_HOME_WIN_PROB",
+    ]
+    upcoming_missing = _missing_columns(upcoming, upcoming_required)
+    if upcoming_missing:
+        st.info(
+            "Upcoming board is refreshing. Preview columns are not ready yet: "
+            + ", ".join(upcoming_missing)
+        )
+    elif upcoming.empty:
         st.info("No upcoming games are currently queued in the prediction board.")
     else:
         upcoming_view = upcoming.copy().sort_values("GAME_DATE").head(8)
@@ -76,26 +92,42 @@ with preview_left:
 
 with preview_right:
     st.subheader("Thunder Recent Results")
-    thunder_games = archive[
-        (archive["HOME_TEAM_ABBREVIATION"] == "OKC") | (archive["AWAY_TEAM_ABBREVIATION"] == "OKC")
-    ].copy()
-    thunder_completed = thunder_games[thunder_games["ACTUAL_HOME_WIN"].notna()].sort_values("GAME_DATE", ascending=False)
-    if thunder_completed.empty:
-        st.info("Thunder results will appear here as completed predictions accumulate.")
-    else:
-        st.dataframe(
-            thunder_completed[
-                [
-                    "GAME_DATE",
-                    "HOME_TEAM_ABBREVIATION",
-                    "AWAY_TEAM_ABBREVIATION",
-                    "PRED_HOME_WIN_PROB",
-                    "ACTUAL_HOME_WIN",
-                ]
-            ].head(8),
-            use_container_width=True,
-            hide_index=True,
+    archive_required = [
+        "GAME_DATE",
+        "HOME_TEAM_ABBREVIATION",
+        "AWAY_TEAM_ABBREVIATION",
+        "PRED_HOME_WIN_PROB",
+        "ACTUAL_HOME_WIN",
+    ]
+    archive_missing = _missing_columns(archive, archive_required)
+    if archive_missing:
+        st.info(
+            "Thunder results preview is refreshing. Archive columns are not ready yet: "
+            + ", ".join(archive_missing)
         )
+    else:
+        thunder_games = archive[
+            (archive["HOME_TEAM_ABBREVIATION"] == "OKC") | (archive["AWAY_TEAM_ABBREVIATION"] == "OKC")
+        ].copy()
+        thunder_completed = thunder_games[
+            thunder_games["ACTUAL_HOME_WIN"].notna()
+        ].sort_values("GAME_DATE", ascending=False)
+        if thunder_completed.empty:
+            st.info("Thunder results will appear here as completed predictions accumulate.")
+        else:
+            st.dataframe(
+                thunder_completed[
+                    [
+                        "GAME_DATE",
+                        "HOME_TEAM_ABBREVIATION",
+                        "AWAY_TEAM_ABBREVIATION",
+                        "PRED_HOME_WIN_PROB",
+                        "ACTUAL_HOME_WIN",
+                    ]
+                ].head(8),
+                use_container_width=True,
+                hide_index=True,
+            )
 
 if metrics:
     st.subheader("Latest Model Snapshot")
