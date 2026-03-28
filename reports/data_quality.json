@@ -1,7 +1,7 @@
 {
   "team_games": {
-    "rows": 28568,
-    "duplicates": 14284,
+    "rows": 28626,
+    "duplicates": 14313,
     "missing_pct": {
       "FT_PCT": 0.0,
       "SEASON_ID": 0.0,
@@ -25,10 +25,10 @@
       "TOV": 0.0
     },
     "date_min": "2014-10-28 00:00:00",
-    "date_max": "2026-03-23 00:00:00"
+    "date_max": "2026-03-27 00:00:00"
   },
   "game_level": {
-    "rows": 14274,
+    "rows": 14303,
     "duplicates": 0,
     "missing_pct": {
       "GAME_ID": 0.0,
@@ -47,10 +47,10 @@
       "HOME_WIN": 0.0
     },
     "date_min": "2014-10-28 00:00:00",
-    "date_max": "2026-03-23 00:00:00"
+    "date_max": "2026-03-27 00:00:00"
   },
   "training_features": {
-    "rows": 14274,
+    "rows": 14303,
     "duplicates": 0,
     "missing_pct": {
       "GAME_ID": 0.0,
@@ -117,6 +117,6 @@
       "home_win": 0.0
     },
     "date_min": "2014-10-28 00:00:00",
-    "date_max": "2026-03-23 00:00:00"
+    "date_max": "2026-03-27 00:00:00"
   }
 }

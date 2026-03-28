@@ -1,14 +1,14 @@
 {
-  "generated_at_utc": "2026-03-27T16:16:53Z",
+  "generated_at_utc": "2026-03-28T07:52:33Z",
   "status": "watch",
   "live_retrain_recommended": false,
   "alerts": [],
   "warnings": [
-    "Thunder sample is still small: 6 completed games, below the recent window of 10."
+    "Thunder sample is still small: 8 completed games, below the recent window of 10."
   ],
   "production_context": {
-    "last_retrain_utc": "2026-03-27T16:16:53Z",
-    "n_games_trained": 14274,
+    "last_retrain_utc": "2026-03-28T07:52:32Z",
+    "n_games_trained": 14303,
     "production_train_seasons": [
       "2014-15",
       "2015-16",
@@ -25,73 +25,73 @@
     ]
   },
   "reference_holdout_metrics": {
-    "accuracy": 0.6579439252336449,
-    "log_loss": 0.6356177798084806,
-    "roc_auc": 0.7199573120692023,
-    "brier_score": 0.21329121541873922,
+    "accuracy": 0.6615104640582348,
+    "log_loss": 0.6306966252792924,
+    "roc_auc": 0.7242082597763868,
+    "brier_score": 0.2114417279223108,
     "confusion_matrix": {
-      "tn": 263,
-      "fp": 224,
-      "fn": 142,
-      "tp": 441
+      "tn": 268,
+      "fp": 228,
+      "fn": 144,
+      "tp": 459
     },
-    "n_obs": 1070
+    "n_obs": 1099
   },
   "league": {
     "overall": {
-      "games": 101,
-      "accuracy": 0.7722772277227723,
-      "log_loss": 0.4897770759811193,
-      "roc_auc": 0.8394145950280674,
-      "brier_score": 0.16196782539947033,
-      "avg_confidence": 0.7144588133589129,
+      "games": 130,
+      "accuracy": 0.7846153846153846,
+      "log_loss": 0.48522300003209873,
+      "roc_auc": 0.8378944773175543,
+      "brier_score": 0.15924285258840304,
+      "avg_confidence": 0.7153975780502846,
       "date_min": "2026-03-11",
-      "date_max": "2026-03-23"
+      "date_max": "2026-03-27"
     },
     "recent": {
       "games": 30,
-      "accuracy": 0.7666666666666667,
-      "log_loss": 0.500937905179631,
-      "roc_auc": 0.8482142857142857,
-      "brier_score": 0.16651584737894048,
-      "avg_confidence": 0.7071774054318667,
-      "date_min": "2026-03-20",
-      "date_max": "2026-03-23"
+      "accuracy": 0.8333333333333334,
+      "log_loss": 0.4618968735683258,
+      "roc_auc": 0.8201058201058201,
+      "brier_score": 0.14633914069171386,
+      "avg_confidence": 0.7207911943395933,
+      "date_min": "2026-03-23",
+      "date_max": "2026-03-27"
     },
     "prior": {
-      "games": 71,
-      "accuracy": 0.7746478873239436,
-      "log_loss": 0.4850612326578045,
-      "roc_auc": 0.8431855500821018,
-      "brier_score": 0.16004612597152512,
-      "avg_confidence": 0.717535464595693,
+      "games": 100,
+      "accuracy": 0.77,
+      "log_loss": 0.49222083797123056,
+      "roc_auc": 0.8376172990616075,
+      "brier_score": 0.1631139661574098,
+      "avg_confidence": 0.713779493163492,
       "date_min": "2026-03-11",
-      "date_max": "2026-03-20"
+      "date_max": "2026-03-23"
     },
     "recent_window_games": 30
   },
   "thunder": {
     "overall": {
-      "games": 6,
-      "accuracy": 1.0,
-      "log_loss": 0.2831599228453909,
-      "roc_auc": null,
-      "brier_score": 0.07251646185323847,
-      "avg_confidence": 0.7651524347885656,
+      "games": 8,
+      "accuracy": 0.875,
+      "log_loss": 0.3217659775766426,
+      "roc_auc": 1.0,
+      "brier_score": 0.09224874430720356,
+      "avg_confidence": 0.7558947058636105,
       "date_min": "2026-03-12",
-      "date_max": "2026-03-23"
+      "date_max": "2026-03-27"
     },
     "recent": {
-      "games": 6,
-      "accuracy": 1.0,
-      "log_loss": 0.2831599228453909,
-      "roc_auc": null,
-      "brier_score": 0.07251646185323847,
-      "avg_confidence": 0.7651524347885656,
+      "games": 8,
+      "accuracy": 0.875,
+      "log_loss": 0.3217659775766426,
+      "roc_auc": 1.0,
+      "brier_score": 0.09224874430720356,
+      "avg_confidence": 0.7558947058636105,
       "date_min": "2026-03-12",
-      "date_max": "2026-03-23"
+      "date_max": "2026-03-27"
     },
     "recent_window_games": 10,
-    "sample_warning": "Thunder sample is still small: 6 completed games, below the recent window of 10."
+    "sample_warning": "Thunder sample is still small: 8 completed games, below the recent window of 10."
   }
 }

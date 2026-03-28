@@ -1,14 +1,14 @@
 {
-  "games": 6,
-  "accuracy": 1.0,
-  "last_10_accuracy": 1.0,
-  "correct": 6,
-  "incorrect": 0,
-  "current_streak": 6,
+  "games": 8,
+  "accuracy": 0.875,
+  "last_10_accuracy": 0.875,
+  "correct": 7,
+  "incorrect": 1,
+  "current_streak": 1,
   "current_streak_label": "W",
   "best_streak": 6,
-  "worst_streak": 0,
-  "avg_confidence": 0.5303048695771313,
-  "avg_confidence_correct": 0.5303048695771313,
-  "avg_confidence_incorrect": null
+  "worst_streak": -1,
+  "avg_confidence": 0.511789411727221,
+  "avg_confidence_correct": 0.5724996276397151,
+  "avg_confidence_incorrect": 0.08681790033976244
 }
