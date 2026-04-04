@@ -1,4 +1,5 @@
 .codex/
+.claude/
 .env
 .venv/
 venv/
