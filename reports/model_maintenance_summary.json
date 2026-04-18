@@ -1,14 +1,12 @@
 {
-  "generated_at_utc": "2026-04-18T06:47:29Z",
-  "status": "watch",
+  "generated_at_utc": "2026-04-18T08:07:23Z",
+  "status": "healthy",
   "live_retrain_recommended": false,
   "alerts": [],
-  "warnings": [
-    "Thunder sample is still small: 9 completed games, below the recent window of 10."
-  ],
+  "warnings": [],
   "production_context": {
-    "last_retrain_utc": "2026-04-18T06:47:28Z",
-    "n_games_trained": 14318,
+    "last_retrain_utc": "2026-04-18T08:07:22Z",
+    "n_games_trained": 14429,
     "production_train_seasons": [
       "2014-15",
       "2015-16",
@@ -25,73 +23,73 @@
     ]
   },
   "reference_holdout_metrics": {
-    "accuracy": 0.6642728904847397,
-    "log_loss": 0.629629395131772,
-    "roc_auc": 0.725530883003932,
-    "brier_score": 0.2111310983643218,
+    "accuracy": 0.676734693877551,
+    "log_loss": 0.6172821997504465,
+    "roc_auc": 0.7384378017662259,
+    "brier_score": 0.20651259928178262,
     "confusion_matrix": {
-      "tn": 273,
-      "fp": 229,
-      "fn": 145,
-      "tp": 467
+      "tn": 303,
+      "fp": 243,
+      "fn": 153,
+      "tp": 526
     },
-    "n_obs": 1114
+    "n_obs": 1225
   },
   "league": {
     "overall": {
-      "games": 145,
-      "accuracy": 0.7862068965517242,
-      "log_loss": 0.4880589058223681,
-      "roc_auc": 0.8362068965517242,
-      "brier_score": 0.1606688158037016,
-      "avg_confidence": 0.7127256924216336,
+      "games": 203,
+      "accuracy": 0.7733990147783252,
+      "log_loss": 0.4935016565491677,
+      "roc_auc": 0.8426719840478564,
+      "brier_score": 0.16223350088111108,
+      "avg_confidence": 0.7021309618997535,
       "date_min": "2026-03-11",
-      "date_max": "2026-03-29"
+      "date_max": "2026-04-06"
     },
     "recent": {
       "games": 30,
-      "accuracy": 0.8666666666666667,
-      "log_loss": 0.4571224453230153,
-      "roc_auc": 0.8465608465608465,
-      "brier_score": 0.1453646121505313,
-      "avg_confidence": 0.7117125323536343,
-      "date_min": "2026-03-25",
-      "date_max": "2026-03-29"
+      "accuracy": 0.7333333333333333,
+      "log_loss": 0.4844115184208861,
+      "roc_auc": 0.8642533936651583,
+      "brier_score": 0.15779350917077922,
+      "avg_confidence": 0.6822897353106074,
+      "date_min": "2026-04-02",
+      "date_max": "2026-04-06"
     },
     "prior": {
-      "games": 115,
-      "accuracy": 0.7652173913043478,
-      "log_loss": 0.4961292868221992,
-      "roc_auc": 0.8316326530612245,
-      "brier_score": 0.16466121675670256,
-      "avg_confidence": 0.7129899950480683,
+      "games": 173,
+      "accuracy": 0.7803468208092486,
+      "log_loss": 0.4950779810800836,
+      "roc_auc": 0.835946094609461,
+      "brier_score": 0.16300344164012812,
+      "avg_confidence": 0.7055716370308193,
       "date_min": "2026-03-11",
-      "date_max": "2026-03-25"
+      "date_max": "2026-04-02"
     },
     "recent_window_games": 30
   },
   "thunder": {
     "overall": {
-      "games": 9,
-      "accuracy": 0.8888888888888888,
-      "log_loss": 0.33209649822845744,
+      "games": 12,
+      "accuracy": 0.9166666666666666,
+      "log_loss": 0.33219341332729374,
       "roc_auc": 1.0,
-      "brier_score": 0.09480470665654336,
-      "avg_confidence": 0.7452965777995989,
+      "brier_score": 0.09414710987396219,
+      "avg_confidence": 0.7415412218781415,
       "date_min": "2026-03-12",
-      "date_max": "2026-03-29"
+      "date_max": "2026-04-05"
     },
     "recent": {
-      "games": 9,
-      "accuracy": 0.8888888888888888,
-      "log_loss": 0.33209649822845744,
+      "games": 10,
+      "accuracy": 0.9,
+      "log_loss": 0.3355770945873954,
       "roc_auc": 1.0,
-      "brier_score": 0.09480470665654336,
-      "avg_confidence": 0.7452965777995989,
-      "date_min": "2026-03-12",
-      "date_max": "2026-03-29"
+      "brier_score": 0.09755476598754317,
+      "avg_confidence": 0.7430717412382364,
+      "date_min": "2026-03-17",
+      "date_max": "2026-04-05"
     },
     "recent_window_games": 10,
-    "sample_warning": "Thunder sample is still small: 9 completed games, below the recent window of 10."
+    "sample_warning": null
   }
 }
