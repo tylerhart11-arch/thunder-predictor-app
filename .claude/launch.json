@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Streamlit Dashboard",
+      "runtimeExecutable": "streamlit",
+      "runtimeArgs": ["run", "streamlit_app.py", "--server.headless", "true", "--server.enableCORS", "false", "--server.enableXsrfProtection", "false"],
+      "port": 8501
+    }
+  ]
+}
