@@ -26,7 +26,7 @@
     "accuracy": 0.6718367346938775,
     "log_loss": 0.6082771546382311,
     "roc_auc": 0.734283880086531,
-    "brier_score": 0.2099636801495809,
+    "brier_score": 0.20996368014958094,
     "confusion_matrix": {
       "tn": 370,
       "fp": 176,
@@ -68,5 +68,5 @@
     "subsample": 0.8,
     "colsample_bytree": 1.0
   },
-  "generated_at_utc": "2026-06-04T16:36:30Z"
+  "generated_at_utc": "2026-06-05T09:00:13Z"
 }
