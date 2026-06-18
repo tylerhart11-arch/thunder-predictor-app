@@ -1,11 +1,11 @@
 {
-  "generated_at_utc": "2026-06-17T16:45:21Z",
+  "generated_at_utc": "2026-06-18T09:54:43Z",
   "status": "healthy",
   "live_retrain_recommended": false,
   "alerts": [],
   "warnings": [],
   "production_context": {
-    "last_retrain_utc": "2026-06-17T16:45:20Z",
+    "last_retrain_utc": "2026-06-18T09:54:43Z",
     "n_games_trained": 14429,
     "production_train_seasons": [
       "2014-15",
@@ -23,15 +23,15 @@
     ]
   },
   "reference_holdout_metrics": {
-    "accuracy": 0.676734693877551,
-    "log_loss": 0.6172821997504465,
-    "roc_auc": 0.7384378017662259,
-    "brier_score": 0.20651259928178262,
+    "accuracy": 0.683265306122449,
+    "log_loss": 0.617839374439729,
+    "roc_auc": 0.7346628580060097,
+    "brier_score": 0.2069131917599053,
     "confusion_matrix": {
-      "tn": 303,
-      "fp": 243,
-      "fn": 153,
-      "tp": 526
+      "tn": 272,
+      "fp": 274,
+      "fn": 114,
+      "tp": 565
     },
     "n_obs": 1225
   },
