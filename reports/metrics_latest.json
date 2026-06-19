@@ -50,9 +50,9 @@
   },
   "improved_test_calibrated": {
     "accuracy": 0.683265306122449,
-    "log_loss": 0.617839374439729,
-    "roc_auc": 0.7346628580060097,
-    "brier_score": 0.2069131917599053,
+    "log_loss": 0.6178393742378381,
+    "roc_auc": 0.7334706285369024,
+    "brier_score": 0.20691319208852435,
     "confusion_matrix": {
       "tn": 272,
       "fp": 274,
@@ -68,5 +68,5 @@
     "subsample": 0.8,
     "colsample_bytree": 0.8
   },
-  "generated_at_utc": "2026-06-19T10:01:42Z"
+  "generated_at_utc": "2026-06-19T16:22:35Z"
 }
