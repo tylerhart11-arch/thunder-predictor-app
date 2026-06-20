@@ -1,11 +1,11 @@
 {
-  "generated_at_utc": "2026-06-20T11:33:14Z",
+  "generated_at_utc": "2026-06-20T15:23:11Z",
   "status": "healthy",
   "live_retrain_recommended": false,
   "alerts": [],
   "warnings": [],
   "production_context": {
-    "last_retrain_utc": "2026-06-20T11:33:13Z",
+    "last_retrain_utc": "2026-06-20T15:23:10Z",
     "n_games_trained": 14429,
     "production_train_seasons": [
       "2014-15",
