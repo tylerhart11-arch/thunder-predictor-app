@@ -580,6 +580,8 @@ class NBAPipeline:
                 archive = archive.loc[~mask_replace].copy()
             archive = pd.concat([archive, latest], ignore_index=True)
 
+        if "SEASON_TYPE" not in archive.columns:
+            archive["SEASON_TYPE"] = pd.Series(index=archive.index, dtype="object")
         if not archive.empty:
             archive_ids = normalize_game_id(archive["GAME_ID"]).astype(str)
             archive["SEASON_TYPE"] = np.where(
@@ -599,7 +601,9 @@ class NBAPipeline:
     def _build_thunder_outputs(self, archive: pd.DataFrame) -> None:
         thunder_abbr = self.cfg["project"]["thunder_team_abbr"]
         thunder = thunder_predictions_only(archive, thunder_abbr=thunder_abbr)
-        if "SEASON_TYPE" not in thunder.columns and not thunder.empty:
+        if "SEASON_TYPE" not in thunder.columns:
+            thunder["SEASON_TYPE"] = pd.Series(index=thunder.index, dtype="object")
+        if not thunder.empty:
             thunder_ids = normalize_game_id(thunder["GAME_ID"]).astype(str)
             thunder["SEASON_TYPE"] = np.where(
                 thunder_ids.str.startswith(("004", "005")),
@@ -608,12 +612,8 @@ class NBAPipeline:
             )
 
         completed = thunder[thunder["ACTUAL_HOME_WIN"].notna()].copy()
-        regular_completed = completed[
-            completed.get("SEASON_TYPE", "Regular Season") != "Playoffs"
-        ].copy()
-        playoff_completed = completed[
-            completed.get("SEASON_TYPE", "Regular Season") == "Playoffs"
-        ].copy()
+        regular_completed = completed[completed["SEASON_TYPE"] != "Playoffs"].copy()
+        playoff_completed = completed[completed["SEASON_TYPE"] == "Playoffs"].copy()
 
         summary = build_thunder_summary(regular_completed)
         rolling = add_rolling_accuracy(regular_completed, window=10)
