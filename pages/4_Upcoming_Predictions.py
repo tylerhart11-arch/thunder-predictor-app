@@ -10,6 +10,7 @@ from dashboard.helpers import (
     format_confidence,
     format_probability,
     latest_update_timestamp,
+    load_pipeline_status,
     load_upcoming,
     matchup_label,
     pick_label,
@@ -27,8 +28,17 @@ if update_ts:
     render_update_pill(f"Last refresh: {update_ts}")
 
 upcoming = load_upcoming()
+pipeline_status = load_pipeline_status()
 if upcoming.empty:
-    st.warning("No upcoming predictions available right now.")
+    if pipeline_status.get("season_phase") == "offseason":
+        st.info(
+            "Offseason: no games fall inside the seven-day scoring window. "
+            "Predictions will resume when the next slate enters range."
+        )
+    elif pipeline_status.get("status") == "attention":
+        st.warning(pipeline_status.get("reason", "The prediction feed needs attention."))
+    else:
+        st.info("No upcoming predictions are available right now.")
     st.stop()
 
 upcoming = upcoming.copy()
