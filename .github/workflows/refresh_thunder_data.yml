@@ -36,6 +36,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Restore persisted model artifacts
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: thunder-models-${{ runner.os }}-${{ hashFiles('requirements.txt', 'config/config.yaml', 'src/**/*.py', 'data/cleaned/games_clean.csv') }}
+          restore-keys: |
+            thunder-models-${{ runner.os }}-
+
       - name: Run daily update
         run: python scripts/daily_update.py
 

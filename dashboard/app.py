@@ -9,6 +9,7 @@ from dashboard.helpers import (
     load_archive,
     load_clean_games,
     load_model_maintenance_artifacts,
+    load_pipeline_status,
     load_upcoming,
     render_update_pill,
     read_json,
@@ -33,6 +34,7 @@ summary = read_json(REPORTS / "thunder_summary.json")
 games = load_clean_games()
 archive = load_archive()
 upcoming = load_upcoming()
+pipeline_status = load_pipeline_status()
 
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Historical Games", f"{len(games):,}" if not games.empty else "0")
@@ -68,13 +70,23 @@ with preview_left:
         "PRED_HOME_WIN_PROB",
     ]
     upcoming_missing = _missing_columns(upcoming, upcoming_required)
-    if upcoming_missing:
-        st.info(
-            "Upcoming board is refreshing. Preview columns are not ready yet: "
+    if upcoming.empty:
+        phase = pipeline_status.get("season_phase")
+        pipeline_state = pipeline_status.get("status")
+        if phase == "offseason":
+            st.info(
+                "Offseason: no games fall inside the seven-day scoring window. "
+                "This is an expected idle state, not a failed refresh."
+            )
+        elif pipeline_state == "attention":
+            st.warning(pipeline_status.get("reason", "The prediction feed needs attention."))
+        else:
+            st.info("No upcoming games are currently queued in the prediction board.")
+    elif upcoming_missing:
+        st.warning(
+            "Upcoming rows are present but required columns are missing: "
             + ", ".join(upcoming_missing)
         )
-    elif upcoming.empty:
-        st.info("No upcoming games are currently queued in the prediction board.")
     else:
         upcoming_view = upcoming.copy().sort_values("GAME_DATE").head(8)
         st.dataframe(
@@ -128,6 +140,24 @@ with preview_right:
                 use_container_width=True,
                 hide_index=True,
             )
+
+st.subheader("Pipeline Freshness")
+if pipeline_status:
+    p1, p2, p3, p4 = st.columns(4)
+    p1.metric("Pipeline State", str(pipeline_status.get("status", "unknown")).title())
+    p2.metric("Season Phase", str(pipeline_status.get("season_phase", "unknown")).title())
+    p3.metric("Upcoming Games", str(pipeline_status.get("upcoming_games", 0)))
+    p4.metric(
+        "Stale Regular Games",
+        str(pipeline_status.get("stale_unresolved_regular_season_games", 0)),
+    )
+    reason = pipeline_status.get("reason")
+    if pipeline_status.get("status") == "attention" and reason:
+        st.warning(str(reason))
+    elif reason:
+        st.caption(str(reason))
+else:
+    st.caption("Pipeline status will appear after the next backend refresh.")
 
 if metrics:
     st.subheader("Latest Model Snapshot")
