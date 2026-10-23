@@ -74,6 +74,7 @@ class NBAPipeline:
         self.archive_path = self.paths.predictions_dir / "prediction_archive.csv"
         self.latest_upcoming_path = self.paths.predictions_dir / "latest_upcoming_predictions.csv"
         self.metrics_path = self.paths.reports_dir / "metrics_latest.json"
+        self.pipeline_status_path = self.paths.reports_dir / "pipeline_status.json"
         self.maintenance_summary_path = self.paths.reports_dir / "model_maintenance_summary.json"
         self.maintenance_windows_path = self.paths.reports_dir / "model_maintenance_windows.csv"
         self.maintenance_segments_path = self.paths.reports_dir / "model_maintenance_segments.csv"
@@ -122,7 +123,8 @@ class NBAPipeline:
             model=model_bundle["model"],
             calibrator=model_bundle["calibrator"],
         )
-        archive = self._update_prediction_archive(upcoming_predictions, game_level)
+        actual_games = self._actual_games_with_scoreboard(game_level, scoreboard_raw)
+        archive = self._update_prediction_archive(upcoming_predictions, actual_games)
         self._build_thunder_outputs(archive)
         self._build_model_maintenance_outputs(archive)
 
@@ -247,7 +249,9 @@ class NBAPipeline:
 
         days_since = (datetime.now(timezone.utc) - last_retrain).days if pd.notna(last_retrain) else 999
         new_games = max(0, n_games - prev_games)
-        should = days_since >= retrain_days or new_games >= min_new_games
+        # A time threshold should never refit an unchanged dataset. Persisted model
+        # artifacts keep the production fit stable through playoffs and offseason.
+        should = (days_since >= retrain_days and new_games > 0) or new_games >= min_new_games
 
         monitoring_cfg = monitoring_settings(self.cfg)
         live_retrain = False
@@ -255,6 +259,8 @@ class NBAPipeline:
             archive = initialize_prediction_archive(self.archive_path)
             if not archive.empty:
                 live_archive = reconcile_archive_with_actuals(archive, actual_games)
+                if "SEASON_TYPE" in live_archive.columns:
+                    live_archive = live_archive[live_archive["SEASON_TYPE"] != "Playoffs"].copy()
                 maintenance = self._build_monitoring_artifacts(live_archive)
                 live_retrain = bool(maintenance.summary.get("live_retrain_recommended", False))
                 if live_retrain:
@@ -414,18 +420,22 @@ class NBAPipeline:
         model,
         calibrator,
     ) -> pd.DataFrame:
+        empty_output = self._empty_upcoming_frame(feature_cols)
         if scoreboard_raw.empty:
-            save_csv(pd.DataFrame(), self.latest_upcoming_path)
-            return pd.DataFrame()
+            save_csv(empty_output, self.latest_upcoming_path)
+            self._write_pipeline_status(pd.DataFrame(), empty_output)
+            return empty_output
 
         schedule = scoreboard_raw.copy()
-        schedule["GAME_DATE"] = pd.to_datetime(schedule["GAME_DATE"])
-        schedule = _pregame_scoreboard_only(schedule)
-        upcoming = schedule[schedule["GAME_DATE"].dt.date >= date.today()].copy()
+        schedule["GAME_DATE"] = pd.to_datetime(schedule["GAME_DATE"], errors="coerce")
+        schedule = schedule[schedule["GAME_DATE"].notna()].copy()
+        pregame_schedule = _pregame_scoreboard_only(schedule)
+        upcoming = pregame_schedule[pregame_schedule["GAME_DATE"].dt.date >= date.today()].copy()
         upcoming = upcoming.sort_values(["GAME_DATE", "GAME_ID"]).drop_duplicates(subset=["GAME_ID"])
         if upcoming.empty:
-            save_csv(pd.DataFrame(), self.latest_upcoming_path)
-            return pd.DataFrame()
+            save_csv(empty_output, self.latest_upcoming_path)
+            self._write_pipeline_status(schedule, empty_output)
+            return empty_output
 
         upcoming_features = build_upcoming_game_features(
             schedule_df=upcoming,
@@ -444,9 +454,97 @@ class NBAPipeline:
         )
         save_csv(pred, self.latest_upcoming_path)
         to_sqlite(pred, "latest_upcoming_predictions", self.paths.sqlite_path, if_exists="replace")
+        self._write_pipeline_status(schedule, pred)
         return pred
 
-    def _update_prediction_archive(self, upcoming_predictions: pd.DataFrame, game_level: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def _empty_upcoming_frame(feature_cols: list[str]) -> pd.DataFrame:
+        identity_cols = [
+            "GAME_ID",
+            "GAME_DATE",
+            "HOME_TEAM_ID",
+            "AWAY_TEAM_ID",
+            "HOME_TEAM_ABBREVIATION",
+            "AWAY_TEAM_ABBREVIATION",
+            "GAME_STATUS_TEXT",
+        ]
+        prediction_cols = ["PRED_HOME_WIN_PROB", "PRED_HOME_WIN", "PREDICTED_WINNER"]
+        columns = list(dict.fromkeys(identity_cols + list(feature_cols) + prediction_cols))
+        return pd.DataFrame(columns=columns)
+
+    def _write_pipeline_status(self, schedule: pd.DataFrame, upcoming: pd.DataFrame) -> None:
+        today = date.today()
+        season_phase = "offseason" if today.month in {7, 8, 9} else "active"
+        pregame = _pregame_scoreboard_only(schedule) if not schedule.empty else pd.DataFrame()
+        stale = pd.DataFrame()
+        if not pregame.empty and "GAME_DATE" in pregame.columns:
+            dates = pd.to_datetime(pregame["GAME_DATE"], errors="coerce")
+            stale = pregame.loc[dates < (pd.Timestamp(today) - pd.Timedelta(days=2))].copy()
+
+        stale_ids = (
+            normalize_game_id(stale["GAME_ID"]).astype(str)
+            if not stale.empty and "GAME_ID" in stale.columns
+            else pd.Series(dtype=str)
+        )
+        stale_regular = int(stale_ids.str.startswith("002").sum())
+        stale_playoffs = int(stale_ids.str.startswith(("004", "005")).sum())
+        status = "attention" if stale_regular else ("idle" if upcoming.empty else "ready")
+        reason = (
+            "Cached regular-season schedule rows are still marked pregame after their dates passed."
+            if stale_regular
+            else (
+                "No games fall inside the configured scoring window."
+                if upcoming.empty
+                else "Upcoming games were scored successfully."
+            )
+        )
+        back = int(self.cfg["data"]["scoreboard_days_back"])
+        forward = int(self.cfg["data"]["scoreboard_days_forward"])
+        save_json(
+            {
+                "generated_at_utc": now_utc_iso(),
+                "status": status,
+                "season_phase": season_phase,
+                "reason": reason,
+                "scoreboard_window_start": str(today - pd.Timedelta(days=back)),
+                "scoreboard_window_end": str(today + pd.Timedelta(days=forward)),
+                "upcoming_games": int(len(upcoming)),
+                "stale_unresolved_regular_season_games": stale_regular,
+                "stale_unresolved_playoff_games": stale_playoffs,
+                "upcoming_schema_version": 1,
+            },
+            self.pipeline_status_path,
+        )
+
+    def _actual_games_with_scoreboard(
+        self,
+        game_level: pd.DataFrame,
+        scoreboard_raw: pd.DataFrame,
+    ) -> pd.DataFrame:
+        actual = game_level.copy()
+        if scoreboard_raw.empty:
+            return actual
+
+        score = scoreboard_raw.copy()
+        status_id = pd.to_numeric(score.get("GAME_STATUS_ID"), errors="coerce")
+        status_text = score.get("GAME_STATUS_TEXT", pd.Series("", index=score.index)).fillna("").astype(str)
+        is_final = status_id.eq(3) | status_text.str.contains("Final", case=False, na=False)
+        if "IS_FINAL" in score.columns:
+            is_final = is_final | score["IS_FINAL"].astype(str).str.lower().isin({"true", "1"})
+        score["HOME_PTS"] = pd.to_numeric(score.get("HOME_PTS"), errors="coerce")
+        score["AWAY_PTS"] = pd.to_numeric(score.get("AWAY_PTS"), errors="coerce")
+        finals = score.loc[is_final & score["HOME_PTS"].notna() & score["AWAY_PTS"].notna()].copy()
+        if finals.empty:
+            return actual
+
+        finals["HOME_WIN"] = (finals["HOME_PTS"] > finals["AWAY_PTS"]).astype(int)
+        finals["GAME_ID"] = normalize_game_id(finals["GAME_ID"])
+        scoreboard_actuals = finals[["GAME_ID", "GAME_DATE", "HOME_WIN"]].copy()
+        combined = pd.concat([actual, scoreboard_actuals], ignore_index=True, sort=False)
+        combined["GAME_ID"] = normalize_game_id(combined["GAME_ID"])
+        return combined.sort_values(["GAME_DATE", "GAME_ID"]).drop_duplicates(subset=["GAME_ID"], keep="last")
+
+    def _update_prediction_archive(self, upcoming_predictions: pd.DataFrame, actual_games: pd.DataFrame) -> pd.DataFrame:
         archive = initialize_prediction_archive(self.archive_path)
         if not archive.empty:
             archive["GAME_ID"] = normalize_game_id(archive["GAME_ID"])
@@ -456,6 +554,12 @@ class NBAPipeline:
             latest["ACTUAL_HOME_WIN"] = np.nan
             latest["IS_CORRECT"] = np.nan
             latest["PREDICTION_TIMESTAMP_UTC"] = now_utc_iso()
+            latest_ids = normalize_game_id(latest["GAME_ID"]).astype(str)
+            latest["SEASON_TYPE"] = np.where(
+                latest_ids.str.startswith(("004", "005")),
+                "Playoffs",
+                "Regular Season",
+            )
 
             keep = [
                 "GAME_ID",
@@ -467,16 +571,25 @@ class NBAPipeline:
                 "ACTUAL_HOME_WIN",
                 "IS_CORRECT",
                 "PREDICTION_TIMESTAMP_UTC",
+                "SEASON_TYPE",
             ]
             latest = latest[keep]
 
             if not archive.empty:
-                # Replace stale pregame predictions for still-unfinished games.
                 mask_replace = archive["GAME_ID"].isin(latest["GAME_ID"]) & archive["ACTUAL_HOME_WIN"].isna()
                 archive = archive.loc[~mask_replace].copy()
             archive = pd.concat([archive, latest], ignore_index=True)
 
-        archive = reconcile_archive_with_actuals(archive, game_level)
+        if "SEASON_TYPE" not in archive.columns:
+            archive["SEASON_TYPE"] = pd.Series(index=archive.index, dtype="object")
+        if not archive.empty:
+            archive_ids = normalize_game_id(archive["GAME_ID"]).astype(str)
+            archive["SEASON_TYPE"] = np.where(
+                archive_ids.str.startswith(("004", "005")),
+                "Playoffs",
+                "Regular Season",
+            )
+        archive = reconcile_archive_with_actuals(archive, actual_games)
         if "GAME_DATE" in archive.columns:
             archive["GAME_DATE"] = pd.to_datetime(archive["GAME_DATE"], errors="coerce")
         archive = archive.sort_values(["GAME_DATE", "GAME_ID"]).drop_duplicates(subset=["GAME_ID"], keep="last")
@@ -488,22 +601,44 @@ class NBAPipeline:
     def _build_thunder_outputs(self, archive: pd.DataFrame) -> None:
         thunder_abbr = self.cfg["project"]["thunder_team_abbr"]
         thunder = thunder_predictions_only(archive, thunder_abbr=thunder_abbr)
-        completed = thunder[thunder["ACTUAL_HOME_WIN"].notna()].copy()
+        if "SEASON_TYPE" not in thunder.columns:
+            thunder["SEASON_TYPE"] = pd.Series(index=thunder.index, dtype="object")
+        if not thunder.empty:
+            thunder_ids = normalize_game_id(thunder["GAME_ID"]).astype(str)
+            thunder["SEASON_TYPE"] = np.where(
+                thunder_ids.str.startswith(("004", "005")),
+                "Playoffs",
+                "Regular Season",
+            )
 
-        summary = build_thunder_summary(completed)
-        rolling = add_rolling_accuracy(completed, window=10)
-        weekly = weekly_performance(completed)
+        completed = thunder[thunder["ACTUAL_HOME_WIN"].notna()].copy()
+        regular_completed = completed[completed["SEASON_TYPE"] != "Playoffs"].copy()
+        playoff_completed = completed[completed["SEASON_TYPE"] == "Playoffs"].copy()
+
+        summary = build_thunder_summary(regular_completed)
+        rolling = add_rolling_accuracy(regular_completed, window=10)
+        weekly = weekly_performance(regular_completed)
+        playoff_summary = build_thunder_summary(playoff_completed)
+        playoff_rolling = add_rolling_accuracy(playoff_completed, window=10)
 
         save_csv(thunder, self.paths.reports_dir / "thunder_predictions_all.csv")
         save_csv(rolling, self.paths.reports_dir / "thunder_predictions_completed.csv")
         save_csv(weekly, self.paths.reports_dir / "thunder_weekly_summary.csv")
         save_json(summary, self.paths.reports_dir / "thunder_summary.json")
+        save_csv(playoff_rolling, self.paths.reports_dir / "thunder_playoff_predictions_completed.csv")
+        save_json(playoff_summary, self.paths.reports_dir / "thunder_playoff_summary.json")
         to_sqlite(thunder, "thunder_predictions_all", self.paths.sqlite_path, if_exists="replace")
         to_sqlite(rolling, "thunder_predictions_completed", self.paths.sqlite_path, if_exists="replace")
         to_sqlite(weekly, "thunder_weekly_summary", self.paths.sqlite_path, if_exists="replace")
+        to_sqlite(playoff_rolling, "thunder_playoff_predictions_completed", self.paths.sqlite_path, if_exists="replace")
 
     def _build_model_maintenance_outputs(self, archive: pd.DataFrame) -> None:
-        maintenance = self._build_monitoring_artifacts(archive)
+        maintenance_archive = archive
+        if "SEASON_TYPE" in maintenance_archive.columns:
+            maintenance_archive = maintenance_archive[
+                maintenance_archive["SEASON_TYPE"] != "Playoffs"
+            ].copy()
+        maintenance = self._build_monitoring_artifacts(maintenance_archive)
 
         save_json(maintenance.summary, self.maintenance_summary_path)
         save_csv(maintenance.windows, self.maintenance_windows_path)
