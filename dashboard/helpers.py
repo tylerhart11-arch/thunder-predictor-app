@@ -528,6 +528,10 @@ def load_model_maintenance_artifacts() -> dict[str, object]:
     }
 
 
+def load_pipeline_status() -> dict:
+    return load_optional_json(REPORTS / "pipeline_status.json")
+
+
 def load_clean_games() -> pd.DataFrame:
     df = read_csv(DATA / "cleaned" / "games_clean.csv")
     if not df.empty and "GAME_DATE" in df.columns:
